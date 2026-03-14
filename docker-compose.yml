@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: alex_db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: alex_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - alex_network
+
+  backend:
+    build: .
+    container_name: alex_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://user:password@db:5432/alex_db
+    depends_on:
+      - db
+    networks:
+      - alex_network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: alex_frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    networks:
+      - alex_network
+
+networks:
+  alex_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
