@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Model definitions matching 'AlexDataBaseScript.sql'
+
+model Rol {
+  idrol       Int       @id @default(autoincrement())
+  nombrerol   String    @unique @db.VarChar(50)
+  descripcion String?   @db.Text
+  usuarios    Usuario[]
+
+  @@map("roles")
+}
+
+model Usuario {
+  idusuario     Int        @id @default(autoincrement())
+  idrol         Int
+  nombre        String     @db.VarChar(100)
+  correo        String     @unique @db.VarChar(150)
+  passwordhash  String     @db.Text
+  fecharegistro DateTime?  @default(now())
+  ultimologin   DateTime?
+  estado        String?    @default("activo") @db.VarChar(20)
+  rol           Rol        @relation(fields: [idrol], references: [idrol])
+  sesiones      Sesion[]
+  registros     Registro[]
+
+  @@map("usuario")
+}
+
+model Sesion {
+  idsesion        Int       @id @default(autoincrement())
+  idusuario       Int
+  token           String    @db.Text
+  fechainicio     DateTime? @default(now())
+  ultimaactividad DateTime?
+  fechaexpiracion DateTime?
+  ip              String?   @db.VarChar(45)
+  useragent       String?   @db.Text
+  usuario         Usuario   @relation(fields: [idusuario], references: [idusuario], onDelete: Cascade)
+
+  @@map("sesiones")
+}
+
+model Registro {
+  idregistro        Int       @id @default(autoincrement())
+  idcreador         Int
+  titulo            String    @db.VarChar(200)
+  descripcion       String?   @db.Text
+  categoria         String?   @db.VarChar(100)
+  activo            Boolean?  @default(true)
+  fechacreacion     DateTime? @default(now())
+  fechaactualizacion DateTime?
+  fechaeliminacion  DateTime?
+  creador           Usuario   @relation(fields: [idcreador], references: [idusuario], onDelete: Cascade)
+
+  @@map("registros")
+}
