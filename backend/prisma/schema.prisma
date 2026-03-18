@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Modelo de Roles ---
+model Rol {
+  idrol       Int       @id @default(autoincrement())
+  nombrerol   String    @unique @db.VarChar(50)
+  descripcion String?   @db.Text
+  usuarios    Usuario[]
+
+  @@map("roles")
+}
+
+// --- Modelo de Usuarios ---
+model Usuario {
+  idusuario     Int        @id @default(autoincrement())
+  idrol         Int
+  nombre        String     @db.VarChar(100)
+  correo        String     @unique @db.VarChar(150)
+  passwordhash  String     @db.Text
+  fecharegistro DateTime?  @default(now())
+  ultimologin   DateTime?
+  estado        String?    @default("activo") @db.VarChar(20)
+  
+  // Relaciones
+  rol           Rol        @relation(fields: [idrol], references: [idrol])
+  sesiones      Sesion[]
+  registros     Registro[]
+  consultas     Consulta[]
+
+  @@map("usuario")
+}
+
+// --- Modelo de Sesiones ---
+model Sesion {
+  idsesion        Int       @id @default(autoincrement())
+  idusuario       Int
+  token           String    @db.Text
+  fechainicio     DateTime? @default(now())
+  ultimaactividad DateTime?
+  fechaexpiracion DateTime?
+  ip              String?   @db.VarChar(45)
+  useragent       String?   @db.Text
+  
+  usuario         Usuario   @relation(fields: [idusuario], references: [idusuario], onDelete: Cascade)
+
+  @@map("sesiones")
+}
+
+// --- Modelo de Registros (General) ---
+model Registro {
+  idregistro         Int       @id @default(autoincrement())
+  idcreador          Int
+  titulo             String    @db.VarChar(200)
+  descripcion        String?   @db.Text
+  categoria          String?   @db.VarChar(100)
+  activo             Boolean?  @default(true)
+  fechacreacion      DateTime? @default(now())
+  fechaactualizacion DateTime?
+  fechaeliminacion   DateTime?
+  
+  creador            Usuario   @relation(fields: [idcreador], references: [idusuario], onDelete: Cascade)
+
+  @@map("registros")
+}
+
+// --- Modelo de Consultas (OpenAI Chat) ---
+model Consulta {
+  idconsulta    Int         @id @default(autoincrement())
+  idusuario     Int
+  pregunta      String      @db.Text
+  respuesta     String?     @db.Text
+  tokens_usados Int?        @default(0)
+  fechaconsulta DateTime?   @default(now())
+  
+  usuario       Usuario     @relation(fields: [idusuario], references: [idusuario], onDelete: Cascade)
+  contenidos    Contenido[]
+
+  @@map("consultas")
+}
+
+// --- Modelo de Contenido (Formatos de Respuesta) ---
+model Contenido {
+  idcontenido   Int       @id @default(autoincrement())
+  idconsulta    Int
+  tipo_formato  String    @db.VarChar(50) // ej: "markdown", "pdf", "html"
+  cuerpo        String    @db.Text
+  fechacreacion DateTime? @default(now())
+  
+  consulta      Consulta  @relation(fields: [idconsulta], references: [idconsulta], onDelete: Cascade)
+
+  @@map("contenidos")
+}

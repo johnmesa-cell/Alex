@@ -1,0 +1,279 @@
+🐳 GUÍA DE EJECUCIÓN CON DOCKER - ALEX
+═════════════════════════════════════════════════════════════════
+
+✅ CORRECCIONES REALIZADAS
+═════════════════════════════════════════════════════════════════
+
+1️⃣  DOCKERFILE
+   ─────────────
+   ✓ Corrección: CMD path → express-ts-openai/src/services/app.js
+   ✓ Agregado: script entrypoint.sh para inicialización correcta
+   ✓ Agregado: postgresql-client (contiene pg_isready)
+   ✓ Mejora: Espera a que PostgreSQL esté listo
+   ✓ Mejora: Genera cliente Prisma automáticamente
+
+2️⃣  DOCKER-COMPOSE.yml
+   ────────────────────
+   ✓ Agregado: version 3.8
+   ✓ Agregado: DATABASE_URL en variables de entorno
+   ✓ Agregado: depends_on con condition service_healthy
+   ✓ Agregado: healthcheck en ambos servicios
+   ✓ Agregado: volumen persistente para PostgreSQL
+   ✓ Agregado: red personalizada (alex-network)
+   ✓ Corregido: Hostname db:5432 en lugar de localhost:5433
+
+3️⃣  .env.example
+   ──────────────
+   ✓ Actualizado: DATABASE_URL para Docker (db:5432)
+   ✓ Limpieza: Removida API key expuesta
+   ✓ Agregado: Instrucciones para desarrollo vs Docker
+   ✓ Mejor: Organización con comentarios
+
+4️⃣  entrypoint.sh (NUEVO)
+   ───────────────────────
+   ✓ Creado: Script para inicialización correcta
+   ✓ Funciones:
+      • Valida conexión a PostgreSQL
+      • Genera cliente Prisma
+      • Inicia servidor Express
+
+
+═════════════════════════════════════════════════════════════════
+
+🚀 CÓMO EJECUTAR DOCKER
+═════════════════════════════════════════════════════════════════
+
+PASO 1: Configurar variables de entorno
+───────────────────────────────────────
+cd backend
+
+# Copiar .env.example a .env (si no existe)
+cp .env.example .env
+
+# EN WINDOWS (PowerShell):
+copy .env.example .env
+
+# Verificar que .env tiene:
+# - DATABASE_URL="postgresql://johndoe:randompassword@db:5432/alexdb?schema=public"
+# - JWT_SECRET="alex_super_secret_key_2026"
+# - OPENAI_API_KEY="tu-api-key"
+
+
+PASO 2: Limpiar contenedores anteriores (recomendado)
+────────────────────────────────────────────────────
+# Ir a la carpeta raíz del proyecto
+cd ..
+
+# Detener y eliminar todos los contenedores
+docker-compose down -v
+
+# O solo del backend
+docker-compose down -v --remove-orphans
+
+
+PASO 3: Construir e iniciar con Docker
+────────────────────────────────────────
+cd backend
+
+# Opción A: Construir y ejecutar (recomendado primera vez)
+docker-compose up -d --build
+
+# Opción B: Solo ejecutar (si ya está construido)
+docker-compose up -d
+
+# Opción C: Forzar reconstrucción
+docker-compose up -d --build --force-recreate
+
+
+PASO 4: Verificar que funciona
+────────────────────────────────
+# Ver logs en tiempo real
+docker-compose logs -f app
+
+# Verificar que ambos contenedores están corriendo
+docker-compose ps
+
+# Debería mostrar:
+# CONTAINER ID   STATUS
+# alex_app       Up X seconds (healthy)
+# alex_db        Up X seconds (healthy)
+
+
+PASO 5: Probar que la API funciona
+──────────────────────────────────
+# Terminal nueva, ejecutar:
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Test Docker",
+    "correo": "docker@test.com",
+    "password": "Docker123"
+  }'
+
+# Debería obtener un 201 CON respuesta exitosa
+
+
+═════════════════════════════════════════════════════════════════
+
+🛠️  COMANDOS ÚTILES
+═════════════════════════════════════════════════════════════════
+
+Ver logs del app
+─────────────────
+docker-compose logs app
+docker-compose logs -f app          # En tiempo real
+docker-compose logs --tail=50 app   # Últimas 50 líneas
+
+
+Ver logs de la BD
+──────────────────
+docker-compose logs db
+docker-compose logs -f db
+
+
+Conectar a la PostgreSQL directamente
+──────────────────────────────────────
+docker-compose exec db psql -U johndoe -d alexdb
+
+# Dentro de psql:
+\dt                          # Ver tablas
+SELECT * FROM usuario;       # Ver usuarios
+\q                           # Salir
+
+
+Ver variables de entorno del app
+─────────────────────────────────
+docker-compose exec app env
+
+
+Ejecutar comandos dentro del contenedor
+────────────────────────────────────────
+docker-compose exec app npm list        # Ver dependencias
+docker-compose exec app npx prisma db push  # Forzar sync BD
+docker-compose exec app npx prisma studio  # Prisma UI
+
+
+Detener solo el app (mantener BD)
+──────────────────────────────────
+docker-compose stop app
+docker-compose start app
+
+
+Detener TODO
+─────────────
+docker-compose down        # Para contenedores pero mantiene volúmenes
+docker-compose down -v     # Para todo incluyendo volúmenes
+
+
+Reconstruir completo
+──────────────────────
+docker-compose down -v
+docker-compose up -d --build
+
+
+═════════════════════════════════════════════════════════════════
+
+❌ RESOLUCIÓN DE PROBLEMAS
+═════════════════════════════════════════════════════════════════
+
+ERROR: "Cannot connect to PostgreSQL"
+─────────────────────────────────────
+Solución:
+1. Verifica que .env tiene DATABASE_URL correcto: db:5432 (NO localhost)
+2. Ver logs: docker-compose logs db
+3. Esperar a que PostgreSQL esté listo (primeros 10-15 segundos)
+4. Si persiste: docker-compose down -v && docker-compose up -d --build
+
+
+ERROR: "module not found: app.js"
+─────────────────────────────────
+Solución:
+1. Verificar que Dockerfile tiene ruta correcta: express-ts-openai/src/services/app.js
+2. Reconstruir: docker-compose up -d --build --force-recreate
+3. Ver logs: docker-compose logs app
+
+
+ERROR: Port 3000 ya está en uso
+───────────────────────────────
+Solución:
+# Opción 1: Cambiar puerto en docker-compose.yml
+# ports:
+#   - "3001:3000"  ← Cambiar primer 3000 a otro puerto
+
+# Opción 2: Matar proceso anterior
+# Windows:
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F
+
+# Linux/Mac:
+lsof -i :3000
+kill -9 <PID>
+
+
+ERROR: "Cannot read property 'prisma'"
+────────────────────────────────────────
+Solución:
+1. Asegurar que npm install se ejecutó: docker-compose up -d --build
+2. Generar Prisma: docker-compose exec app npx prisma generate
+3. Si sigue: docker-compose down -v && docker-compose up -d --build
+
+
+ERROR: Health check fallando
+────────────────────────────
+Solución:
+Espera más tiempo - los primeros 30 segundos pueden fallar healthchecks
+Ver logs: docker-compose logs app
+Si persiste después de 1 minuto: revisar los logs de error
+
+
+═════════════════════════════════════════════════════════════════
+
+📋 CHECKLIST FINAL
+═════════════════════════════════════════════════════════════════
+
+[ ] Archivo Dockerfile actualizado correctamente
+[ ] docker-compose.yml tiene version 3.8
+[ ] .env tiene DATABASE_URL con db:5432
+[ ] entrypoint.sh fue creado en backend/
+[ ] Ejecutar: docker-compose down -v (limpiar)
+[ ] Ejecutar: docker-compose up -d --build
+[ ] Esperar 20 segundos (para PostgreSQL)
+[ ] Ver logs: docker-compose logs -f app
+[ ] Probar API: curl http://localhost:3000/api/auth/register
+[ ] Debe responder 201 o 400 (no error de conexión)
+
+
+═════════════════════════════════════════════════════════════════
+
+✅ RESULTADO ESPERADO
+═════════════════════════════════════════════════════════════════
+
+docker-compose logs app mostrará:
+
+"⏳ Esperando a que PostgreSQL esté disponible..."
+"✅ PostgreSQL está disponible"
+"📦 Generando cliente de Prisma..."
+"▶️  Iniciando servidor Express..."
+"Server is running on http://localhost:3000"
+
+
+═════════════════════════════════════════════════════════════════
+
+🔐 PRODUCCIÓN
+═════════════════════════════════════════════════════════════════
+
+Antes de pasar a producción, cambiar:
+
+✓ JWT_SECRET → Usar valor seguro (ver FAQ)
+✓ POSTGRES_PASSWORD → Contraseña fuerte
+✓ NODE_ENV → "production"
+✓ Usar secrets management (AWS Secrets Manager, etc)
+✓ HTTPS obligatorio
+✓ Backups automáticos de BD
+
+
+═════════════════════════════════════════════════════════════════
+
+Creado por: GitHub Copilot - Senior Backend Developer
+Proyecto: ALEX
+Fecha: 17 de Marzo, 2026
