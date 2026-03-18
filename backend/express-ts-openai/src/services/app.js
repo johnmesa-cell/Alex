@@ -1,6 +1,10 @@
 import express from "express";
 import bodyParser from "body-parser";
+import dotenv from "dotenv";
 import { setAIRoutes } from "./routes/ai.routes.js";
+import { setAuthRoutes } from "./routes/auth.routes.js";
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());
 
 setAIRoutes(app);
+setAuthRoutes(app);
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
