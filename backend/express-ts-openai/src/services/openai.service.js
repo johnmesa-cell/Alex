@@ -5,15 +5,20 @@ dotenv.config();
 
 export class OpenAIService {
     constructor() {
-        if (!process.env.OPENAI_API_KEY) {
-             console.warn("Warning: OPENAI_API_KEY env var is not set");
-        }
-        this.openai = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY, 
-        });
+        this.openai = null;
     }
 
     async getMedicalGuidance(userMessage, systemPrompt = '') {
+        if (!process.env.OPENAI_API_KEY) {
+            throw new Error("OPENAI_API_KEY no está configurada.");
+        }
+
+        if (!this.openai) {
+            this.openai = new OpenAI({
+                apiKey: process.env.OPENAI_API_KEY,
+            });
+        }
+
         const prompt = systemPrompt || 'Eres ALEX, un asistente médico experto en el sistema de salud de Colombia. Responde de forma ética y clara.';
         
         try {
