@@ -106,3 +106,4 @@ model reportes_programados {
   activo                  Boolean?  @default(true)
   reportes                reportes  @relation(fields: [id_reporte], references: [id_reporte], onDelete: Cascade, onUpdate: NoAction, map: "fk_programacion_reporte")
 }
+

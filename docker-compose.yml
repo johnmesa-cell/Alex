@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: randompassword
       POSTGRES_DB: alexdb
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -20,7 +20,10 @@ services:
       dockerfile: Dockerfile
     container_name: alex_app
     restart: always
-    command: node src/services/app.js
+    command: npm run dev
+    volumes:
+      - ./backend/express-ts-openai:/app
+      - /app/node_modules
     ports:
       - "3000:3000"
     # CAMBIO AQUÍ: Ahora lo busca en la raíz
@@ -51,3 +54,4 @@ networks:
 
 volumes:
   postgres_data:
+  

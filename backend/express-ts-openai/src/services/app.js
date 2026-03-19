@@ -11,6 +11,14 @@ const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
+app.get("/", (req, res) => {
+    res.status(200).json({
+        message: "ALEX API is running",
+        status: "ok",
+        version: "1.0.0",
+    });
+});
+
 setAIRoutes(app);
 setAuthRoutes(app);
 
