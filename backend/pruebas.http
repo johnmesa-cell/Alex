@@ -1,0 +1,19 @@
+### Registrar un nuevo usuario
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "nombre": "Juan",
+  "correo": "juan@alex.com",
+  "password": "AlexPassword123",
+  "idrol": 2
+}
+
+### Login del usuario
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "correo": "juan@alex.com",
+  "password": "AlexPassword123"
+}

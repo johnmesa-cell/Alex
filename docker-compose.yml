@@ -4,41 +4,49 @@ services:
     container_name: alex_db
     restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: alex_db
+      POSTGRES_USER: johndoe
+      POSTGRES_PASSWORD: randompassword
+      POSTGRES_DB: alexdb
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - alex_network
+      - alex_net
 
   backend:
-    build: .
+    build:
+      context: ./backend/express-ts-openai
+      dockerfile: Dockerfile
     container_name: alex_app
     restart: always
+    command: node src/services/app.js
     ports:
       - "3000:3000"
-    environment:
-      DATABASE_URL: postgres://user:password@db:5432/alex_db
+    # CAMBIO AQUÍ: Ahora lo busca en la raíz
+    env_file:
+      - .env 
     depends_on:
       - db
     networks:
-      - alex_network
+      - alex_net
 
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
     container_name: alex_frontend
     restart: always
     ports:
       - "5173:5173"
+    # También puedes añadirlo al frontend si necesitas variables ahí
+    env_file:
+      - .env
     networks:
-      - alex_network
+      - alex_net
 
 networks:
-  alex_network:
+  alex_net:
     driver: bridge
 
 volumes:
