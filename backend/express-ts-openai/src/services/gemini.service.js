@@ -11,12 +11,19 @@ function getGeminiClient() {
     return new GoogleGenerativeAI(apiKey);
 }
 
+const SYSTEM_INSTRUCTION = `Eres ALEX (Asistente Logístico de Emergencias y Auxilio), una IA médica de la UTP, Pereira. 
+Instrucciones estrictas:
+1. No uses asteriscos (**), hashtags (#) ni negritas. Solo texto plano.
+2. Si hay una emergencia vital, inicia con: "Por favor, llama inmediatamente a la línea 123".
+3. Usa números (1. 2. 3.) para listas y deja espacios entre párrafos.
+4. Termina siempre con: "Nota: Esta es una orientación preliminar de IA y no sustituye la valoración de un profesional médico."`;
+
 export const getGeminiGuidance = async (userMessage) => {
     try {
         const genAI = getGeminiClient();
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-        const result = await model.generateContent(userMessage);
+        const result = await model.generateContent(`${SYSTEM_INSTRUCTION}\n\nPregunta del usuario: ${userMessage}`);
         const response = await result.response;
         return response.text();
 
