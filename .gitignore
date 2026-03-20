@@ -1,1 +1,11 @@
+# Ignorar carpetas de dependencias
 node_modules/
+dist/
+build/
+
+# Ignorar variables de entorno (Tus llaves de Google)
+.env
+
+# Ignorar archivos de Docker y logs
+*.log
+.docker/
