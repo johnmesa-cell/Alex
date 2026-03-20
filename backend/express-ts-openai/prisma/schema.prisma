@@ -8,8 +8,8 @@ datasource db {
 }
 
 model Rol {
-  id_rol      Int       @id @default(autoincrement())
-  nombre_rol  String    @unique @db.VarChar(50)
+  id_rol      Int       @id @default(autoincrement()) @map("idrol")
+  nombre_rol  String    @unique @db.VarChar(50) @map("nombrerol")
   descripcion String?
   usuario     Usuario[]
 
@@ -17,13 +17,13 @@ model Rol {
 }
 
 model Usuario {
-  id_usuario     Int              @id @default(autoincrement())
-  id_rol         Int
+  id_usuario     Int              @id @default(autoincrement()) @map("idusuario")
+  id_rol         Int              @map("idrol")
   nombre         String           @db.VarChar(100)
   correo         String           @unique @db.VarChar(150)
-  password_hash  String
-  fecha_registro DateTime?        @default(now()) @db.Timestamp(6)
-  ultimo_login   DateTime?        @db.Timestamp(6)
+  password_hash  String           @map("passwordhash")
+  fecha_registro DateTime?        @default(now()) @db.Timestamp(6) @map("fecharegistro")
+  ultimo_login   DateTime?        @db.Timestamp(6) @map("ultimologin")
   estado         String?          @default("activo") @db.VarChar(20)
   auditoria      auditoria[]
   notificaciones notificaciones[]
@@ -36,14 +36,14 @@ model Usuario {
 }
 
 model Sesion {
-  id_sesion        Int       @id @default(autoincrement())
-  id_usuario       Int
+  id_sesion        Int       @id @default(autoincrement()) @map("idsesion")
+  id_usuario       Int       @map("idusuario")
   token            String
-  fecha_inicio     DateTime? @default(now()) @db.Timestamp(6)
-  ultima_actividad DateTime? @db.Timestamp(6)
-  fecha_expiracion DateTime? @db.Timestamp(6)
+  fecha_inicio     DateTime? @default(now()) @db.Timestamp(6) @map("fechainicio")
+  ultima_actividad DateTime? @db.Timestamp(6) @map("ultimaactividad")
+  fecha_expiracion DateTime? @db.Timestamp(6) @map("fechaexpiracion")
   ip               String?   @db.VarChar(45)
-  user_agent       String?
+  user_agent       String?   @map("useragent")
   usuario          Usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction, map: "fk_sesion_usuario")
 
   @@map("sesiones")

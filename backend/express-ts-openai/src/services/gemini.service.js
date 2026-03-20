@@ -1,8 +1,15 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Limpiamos la llave por si acaso
-const apiKey = (process.env.GEMINI_API_KEY || "").trim();
-const genAI = new GoogleGenerativeAI(apiKey);
+function getGeminiClient() {
+    // Soporta ambos nombres comunes de variable para evitar errores de entorno.
+    const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
+
+    if (!apiKey) {
+        throw new Error("GEMINI_API_KEY no esta configurada en el entorno del backend.");
+    }
+
+    return new GoogleGenerativeAI(apiKey);
+}
 
 const SYSTEM_INSTRUCTION = `Eres ALEX (Asistente Logístico de Emergencias y Auxilio), una IA médica de la UTP, Pereira. 
 Instrucciones estrictas:
@@ -13,7 +20,7 @@ Instrucciones estrictas:
 
 export const getGeminiGuidance = async (userMessage) => {
     try {
-        // CAMBIO CLAVE: Usamos el modelo que tu comando curl confirmó
+        const genAI = getGeminiClient();
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const result = await model.generateContent(`${SYSTEM_INSTRUCTION}\n\nPregunta del usuario: ${userMessage}`);
