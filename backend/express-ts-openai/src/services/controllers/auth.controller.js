@@ -30,15 +30,14 @@ class AuthController {
                 });
             }
 
-            const defaultRole = await prisma.rol.findFirst({
-                where: { nombre_rol: "usuario" }
+            const defaultRole = await prisma.rol.upsert({
+                where: { nombre_rol: "usuario" },
+                update: {},
+                create: {
+                    nombre_rol: "usuario",
+                    descripcion: "Rol por defecto para nuevos registros"
+                }
             });
-
-            if (!defaultRole) {
-                return res.status(500).json({
-                    error: "No existe un rol por defecto ('usuario'). Configura la tabla de roles."
-                });
-            }
 
             const passwordhash = await bcrypt.hash(String(password), 10);
 

@@ -10,28 +10,29 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const envOrigins = (process.env.FRONTEND_ORIGIN || "")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-
-const allowedOrigins = [
-    ...envOrigins,
+const defaultOrigins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174"
-].filter(Boolean);
+    "http://localhost",
+    "http://127.0.0.1"
+];
+
+const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean)
+    : defaultOrigins;
 
 app.use(
     cors({
-        origin(origin, callback) {
-            // Permite llamadas sin origin (ej. Postman/PowerShell) y navegador desde orígenes permitidos.
-            if (!origin || allowedOrigins.includes(origin)) {
-                return callback(null, true);
+        origin: function (origin, callback) {
+            // Permitir peticiones sin origen (como Postman) o si está en la lista
+            if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+                callback(null, true);
+            } else {
+                console.log("Bloqueado por CORS:", origin);
+                callback(new Error("No permitido por CORS"));
             }
-            return callback(new Error(`CORS bloqueado para origin: ${origin}`));
-        }
+        },
+        credentials: true
     })
 );
 
@@ -41,13 +42,14 @@ app.get("/", (req, res) => {
     res.status(200).json({
         message: "ALEX API is running",
         status: "ok",
-        version: "1.0.0",
     });
 });
 
 setAIRoutes(app);
 setAuthRoutes(app);
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+// CAMBIO CRÍTICO: Escuchar en '0.0.0.0' para aceptar conexiones externas
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT} (Public Access)`);
+    console.log("Allowed CORS origins:", allowedOrigins);
 });
