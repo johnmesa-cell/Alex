@@ -1,59 +1,118 @@
-# Express TypeScript OpenAI Project
+# Express TypeScript OpenAI/Gemini Backend (Alex Project)
 
-This project is a Node.js application built with Express and TypeScript, designed to provide AI functionalities using the OpenAI API. The application follows the Controller-Service pattern, ensuring a clean separation of concerns.
+Este proyecto es una aplicación backend Node.js construida con Express.js, diseñada para proveer funcionalidades de autenticación y chat con IA (usando Google Gemini) para la plataforma Alex.
 
-## Project Structure
+La aplicación sigue una arquitectura de controladores y servicios, utilizando Prisma como ORM para PostgreSQL.
 
-```
-express-ts-openai
-├── src
-│   ├── config
-│   │   └── index.ts          # Configuration settings and environment variable loading
-│   ├── controllers
-│   │   └── ai.controller.ts   # Controller for handling AI-related requests
-│   ├── interfaces
-│   │   └── index.ts          # Interfaces for request and response types
-│   ├── routes
-│   │   └── ai.routes.ts      # Routes for AI-related endpoints
-│   ├── services
-│   │   └── openai.service.ts  # Service for interacting with OpenAI API
-│   └── app.ts                # Entry point of the application
-├── .env                       # Environment variables
-├── package.json               # NPM configuration file
-├── tsconfig.json             # TypeScript configuration file
-└── README.md                  # Project documentation
-```
+## 📂 Estructura del Proyecto
 
-## Setup Instructions
+La estructura actual del código fuente en `src/` es la siguiente:
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd express-ts-openai
-   ```
+```text
+src/
+├── config/
+│   └── index.js             # Configuraciones generales
+├── middlewares/
+│   └── auth.middleware.js   # Middleware de verificación de JWT
+├── services/
+│   ├── app.js               # Punto de entrada de la aplicación
+│   ├── prisma.client.js     # Instancia del cliente Prisma
+│   ├── gemini.service.js    # Lógica de integración con Google Gemini AI
+│   ├── openai.service.js    # Servicio OpenAI (Legacy/Alternativo)
+│   ├── controllers/
+│   │   ├── ai.controller.js   # Controlador para endpoints de IA
+│   │   └── auth.controller.js # Controlador para registro y login
+│   └── routes/
+│       ├── ai.routes.js       # Rutas para IA (/api/ai)
+│       └── auth.routes.js     # Rutas de autenticación (/auth)
+└── prisma/
+    └── schema.prisma        # Esquema de base de datos PostgreSQL
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+🚀 Configuración y Setup
+1. Prerrequisitos
+Node.js (v18+ recomendado)
+PostgreSQL (o Docker container asociado)
+Clave de API de Google Gemini (y opcionalmente OpenAI)
+2. Instalación
+# Navegar al directorio
+cd backend/express-ts-openai
 
-3. **Set up environment variables:**
-   Create a `.env` file in the root directory and add your OpenAI API key and any other necessary configuration settings.
+# Instalar dependencias
+npm install
 
-4. **Run the application:**
-   ```bash
-   npm run start
-   ```
+3. Variables de Entorno (.env)
+Crea un archivo .env en la raíz de express-ts-openai con el siguiente contenido:
 
-## Usage
+PORT=3000
+DATABASE_URL="postgresql://johndoe:randompassword@localhost:5433/alexdb?schema=public" # Ajustar host/puerto según entorno
+JWT_SECRET="tu_secreto_super_seguro"
+GOOGLE_API_KEY="TU_API_KEY_DE_GEMINI"
 
-- The application exposes AI-related endpoints that can be accessed via HTTP requests. The main functionality is provided through the `getMedicalGuidance` method in the `OpenAIService`, which interacts with the OpenAI GPT-4 model.
+4. Base de Datos (Prisma)
 
-- Ensure to follow the ethical guidelines and clarity in responses as specified in the system prompt used in the service.
+# Generar el cliente de Prisma (necesario tras cambios en schema.prisma)
+npx prisma generate
 
-## Contributing
+# Ejecutar migraciones (sincronizar DB con esquema)
+npx prisma migrate dev
 
-Contributions are welcome! Please feel free to submit a pull request or open an issue for any enhancements or bug fixes.
+5. Ejecución
+
+# Iniciar en modo desarrollo (con nodemon)
+npm run dev
+
+# Iniciar en producción
+npm start
+
+📡 API Reference
+Autenticación (/auth)
+
+POST /auth/register
+
+Registra un nuevo usuario. Nota: Requiere que exista el rol "usuario" en la base de datos
+
+
+{
+  "nombre": "Usuario Prueba",
+  "email": "usuario@test.com",
+  "password": "1234password"
+}
+
+POST /auth/login
+Inicia sesión y devuelve información del usuario (token se implementará en respuesta futura para JWT).
+
+
+{
+  "email": "usuario@test.com",
+  "password": "1234password"
+}
+
+nteligencia Artificial (/api/ai)
+POST /api/ai/guidance
+Envía un prompt a Gemini y recibe una respuesta generada.
+
+{
+  "prompt": "¿Cómo puedo organizar mejor mi tiempo de estudio?"
+}
+Respuesta
+
+{
+  "success": true,
+  "data": {
+    "respuesta": "Texto generado por la IA..."
+  }
+}
+
+🛠️ Tecnologías Principales
+Express.js: Framework web.
+Prisma ORM: Gestión de base de datos PostgreSQL.
+Google Generative AI: Motor de inteligencia artificial.
+Bcryptjs: Hash de contraseñas.
+JWT: Manejo de sesiones (preparado en middleware).
+Docker: Contenerización lista para despliegue.
+servidor en oracle dockerizado
+
+
 
 ## License
 
