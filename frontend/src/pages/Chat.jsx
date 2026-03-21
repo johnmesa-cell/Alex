@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import api, { getApiError } from '../services/api.js';
+import api, { getApiError, uploadDocument } from '../services/api.js';
 
 function Chat() {
   const [prompt, setPrompt] = useState('');
@@ -12,8 +12,10 @@ function Chat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const recognitionRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const speechEnabled = useMemo(
     () => typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window),
@@ -86,6 +88,36 @@ function Chat() {
     setIsListening(false);
   };
 
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    setSelectedFile(file);
+    setError('');
+  };
+
+  const handleDocumentSubmit = async () => {
+    if (!selectedFile || loading) return;
+
+    setError('');
+    setLoading(true);
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', text: `📄 Documento adjunto: ${selectedFile.name}${prompt.trim() ? `\n${prompt.trim()}` : ''}` },
+    ]);
+
+    try {
+      const { data } = await uploadDocument(selectedFile, prompt.trim());
+      const answer = data?.data?.respuesta || 'No se recibio respuesta valida del servidor.';
+      setMessages((prev) => [...prev, { role: 'assistant', text: answer }]);
+      setSelectedFile(null);
+      setPrompt('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err) {
+      setError(getApiError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className="chat-layout">
       <div className="chat-header fade-up">
@@ -119,15 +151,56 @@ function Chat() {
             onChange={(event) => setPrompt(event.target.value)}
             placeholder="Ejemplo: una persona esta inconsciente, como evaluo respiracion y pulso?"
             rows={3}
-            required
+            required={!selectedFile}
           />
+
+          <div className="document-upload">
+            <label htmlFor="doc-input" className="btn-secondary btn-file-label">
+              📎 Adjuntar documento
+            </label>
+            <input
+              id="doc-input"
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,.doc,.txt,.md"
+              onChange={handleFileChange}
+              className="file-input-hidden"
+            />
+            {selectedFile && (
+              <span className="file-name-preview">
+                {selectedFile.name}
+                <button
+                  type="button"
+                  className="btn-remove-file"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  aria-label="Quitar archivo"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+          </div>
 
           {error && <p className="error-box">{error}</p>}
 
           <div className="chat-actions">
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Enviando...' : 'Enviar'}
-            </button>
+            {selectedFile ? (
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={loading}
+                onClick={handleDocumentSubmit}
+              >
+                {loading ? 'Analizando...' : 'Analizar documento'}
+              </button>
+            ) : (
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Enviando...' : 'Enviar'}
+              </button>
+            )}
 
             {speechEnabled && !isListening && (
               <button type="button" className="btn-secondary" onClick={startSpeech}>

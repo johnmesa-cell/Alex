@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { setAIRoutes } from "./routes/ai.routes.js";
 import { setAuthRoutes } from "./routes/auth.routes.js";
+import { setDocumentRoutes } from "./routes/document.routes.js";
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ app.get("/", (req, res) => {
 
 setAIRoutes(app);
 setAuthRoutes(app);
+setDocumentRoutes(app);
 
 // CAMBIO CRÍTICO: Escuchar en '0.0.0.0' para aceptar conexiones externas
 app.listen(PORT, '0.0.0.0', () => {
