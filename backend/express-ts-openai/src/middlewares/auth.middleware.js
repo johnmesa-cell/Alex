@@ -1,12 +1,43 @@
+/**
+ * @fileoverview Middlewares de autenticación y autorización basados en JWT.
+ *
+ * Exporta dos middlewares de Express:
+ *  - {@link verifyToken}  → verifica la validez del token JWT enviado en el header.
+ *  - {@link verifyRole}   → verifica que el usuario autenticado posea uno de los roles
+ *                           permitidos para la ruta.
+ *
+ * Flujo típico de uso en una ruta protegida:
+ * ```js
+ * router.get('/admin', verifyToken, verifyRole(['admin']), handler);
+ * ```
+ *
+ * Variable de entorno:
+ *  - JWT_SECRET  Clave secreta para firmar/verificar tokens JWT.
+ *               Si no se define se usa la clave por defecto (solo para desarrollo).
+ */
+
 import jwt from 'jsonwebtoken';
 
 // Configuración
 const JWT_SECRET = process.env.JWT_SECRET || 'alex_super_secret_key_2026';
 
 /**
- * @middleware verifyToken
- * @description Verifica que el JWT sea válido y extrae la información del usuario
- * Espera un token en el header: Authorization: Bearer <token>
+ * Middleware que verifica la autenticidad del JWT enviado en el header
+ * `Authorization: Bearer <token>`.
+ *
+ * Si el token es válido, añade el payload decodificado a `req.usuario`
+ * y el token raw a `req.token`, luego llama a `next()`.
+ *
+ * En caso de fallo retorna una respuesta JSON con el código HTTP correspondiente:
+ *  - 401 si el token no se proporcionó, expiró o es inválido.
+ *
+ * @type {import('express').RequestHandler}
+ *
+ * @example
+ * // Ruta protegida
+ * router.get('/perfil', verifyToken, (req, res) => {
+ *   res.json({ usuario: req.usuario });
+ * });
  */
 export const verifyToken = (req, res, next) => {
   try {
@@ -55,9 +86,19 @@ export const verifyToken = (req, res, next) => {
 };
 
 /**
- * @middleware verifyRole
- * @description Verifica que el usuario tenga un rol específico
- * @param {Array<string>} rolesPermitidos - Array de roles permitidos (ej: ['admin', 'moderador'])
+ * Middleware factory que genera un middleware de autorización por rol.
+ *
+ * Debe usarse **después** de {@link verifyToken}, ya que depende de que
+ * `req.usuario` esté poblado con el payload del JWT.
+ *
+ * @param {string[]} [rolesPermitidos=[]] Array de nombres de rol que pueden
+ *   acceder al recurso (ej. `['admin', 'moderador']`).
+ * @returns {import('express').RequestHandler} Middleware de Express que verifica
+ *   si el rol del usuario está en la lista permitida.
+ *
+ * @example
+ * // Solo administradores pueden acceder
+ * router.delete('/usuario/:id', verifyToken, verifyRole(['admin']), handler);
  */
 export const verifyRole = (rolesPermitidos = []) => {
   return (req, res, next) => {
