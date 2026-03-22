@@ -1,4 +1,4 @@
-# Express TypeScript OpenAI/Gemini Backend (Alex Project)
+# Express OpenAI/Gemini Backend (Alex Project)
 
 Este proyecto es una aplicación backend Node.js construida con Express.js, diseñada para proveer funcionalidades de autenticación y chat con IA (usando Google Gemini) para la plataforma Alex.
 
@@ -110,7 +110,7 @@ Google Generative AI: Motor de inteligencia artificial.
 Bcryptjs: Hash de contraseñas.
 JWT: Manejo de sesiones (preparado en middleware).
 Docker: Contenerización lista para despliegue.
-servidor en oracle dockerizado
+servidor en oracle dockerizado, permite que la IP sea pública
 
 
 
