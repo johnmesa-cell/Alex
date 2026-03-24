@@ -351,6 +351,55 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+.file-upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  position: relative;
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.75rem;
+  background: #e8f5ef;
+  border: 1px solid #a9d3c8;
+  border-radius: 0.7rem;
+  font-size: 0.88rem;
+  color: var(--brand-strong);
+}
+
+.file-remove-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0 0.2rem;
+  line-height: 1;
+}
+
+.file-remove-btn:hover {
+  color: var(--danger);
+}
+
+.message-file-tag {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
 .muted {
   color: var(--muted);
   font-size: 0.86rem;
