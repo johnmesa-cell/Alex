@@ -1,0 +1,706 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ALEX - Chat</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap"
+    />
+    <style>
+      :root {
+        --card: #ffffff;
+        --text: #17332c;
+        --muted: #4a6158;
+        --brand: #0f766e;
+        --brand-strong: #115e59;
+        --border: #cee3db;
+        --shadow: 0 14px 40px rgba(23, 51, 44, 0.14);
+        --space-1: 0.4rem;
+        --space-2: 0.7rem;
+        --space-3: 1rem;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 14% 18%, rgba(255, 127, 80, 0.22), transparent 32%),
+          radial-gradient(circle at 83% 10%, rgba(15, 118, 110, 0.2), transparent 30%),
+          linear-gradient(180deg, #f8fcfa 0%, #edf5f2 100%);
+        display: grid;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      .page {
+        width: min(100%, 1920px);
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: 1.2rem;
+        display: grid;
+        grid-template-rows: auto auto 1fr auto;
+        gap: 1rem;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: var(--space-3);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(8px);
+        padding: var(--space-2) var(--space-3);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+
+      .brand img {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+      }
+
+      .brand h2 {
+        font-family: "Fraunces", serif;
+        font-size: 1.3rem;
+        letter-spacing: 0.03em;
+        color: var(--brand-strong);
+      }
+
+      .brand-link {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .topbar-nav {
+        display: flex;
+        justify-content: center;
+        gap: var(--space-1);
+        flex-wrap: wrap;
+      }
+
+      .top-nav-link {
+        text-decoration: none;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.42rem 0.78rem;
+        color: var(--muted);
+        background: #f4fbf8;
+        font-size: 0.78rem;
+        font-weight: 700;
+        transition: all 0.2s ease;
+      }
+
+      .top-nav-link:hover {
+        color: var(--brand-strong);
+        border-color: #a6cfc3;
+        background: #eaf7f2;
+      }
+
+      .top-nav-link.is-active {
+        color: #ffffff;
+        border-color: var(--brand);
+        background: linear-gradient(110deg, var(--brand), #149086);
+      }
+
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .status {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.35rem 0.7rem;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .btn {
+        border: 0;
+        border-radius: 999px;
+        padding: 0.68rem 1.08rem;
+        font: inherit;
+        font-size: 0.88rem;
+        font-weight: 700;
+        line-height: 1.1;
+        min-height: 42px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease, filter 0.2s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(0.98);
+      }
+
+      .btn:focus-visible,
+      .top-nav-link:focus-visible {
+        outline: 3px solid rgba(15, 118, 110, 0.32);
+        outline-offset: 2px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(110deg, var(--brand), #149086);
+        color: #ffffff;
+      }
+
+      .btn-secondary {
+        border: 1px solid #accfc4;
+        background: #eef8f4;
+        color: var(--brand-strong);
+      }
+
+      .guest-alert {
+        width: min(100%, 1160px);
+        margin: 0 auto;
+        border: 1px solid #ffd8c7;
+        background: #fff6f0;
+        color: #7a4a30;
+        border-radius: 0.85rem;
+        padding: 0.75rem 0.85rem;
+        display: grid;
+        gap: 0.4rem;
+      }
+
+      .guest-alert h3 {
+        font-family: "Fraunces", serif;
+        font-size: 1.02rem;
+      }
+
+      .layout {
+        width: min(100%, 1160px);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 0.9rem;
+        align-content: start;
+      }
+
+      .chat-panel,
+      .guest-side {
+        border: 1px solid var(--border);
+        border-radius: 1.2rem;
+        background: var(--card);
+        box-shadow: var(--shadow);
+      }
+
+      .chat-panel {
+        padding: 1rem;
+      }
+
+      .chat-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.6rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .chat-head h1 {
+        font-family: "Fraunces", serif;
+        font-size: 1.45rem;
+      }
+
+      .chat-head p {
+        margin-top: 0.25rem;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .chip {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: #f2faf6;
+        color: var(--brand-strong);
+        font-size: 0.74rem;
+        font-weight: 700;
+        padding: 0.32rem 0.65rem;
+        white-space: nowrap;
+      }
+
+      .state-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 0.65rem;
+      }
+
+      .state-pill {
+        border: 1px solid #cfe4dc;
+        border-radius: 999px;
+        background: #f4fbf8;
+        color: var(--muted);
+        font-size: 0.73rem;
+        font-weight: 700;
+        padding: 0.26rem 0.55rem;
+      }
+
+      .state-pill.is-current {
+        border-color: #9ecfc2;
+        color: var(--brand-strong);
+        background: #e6f4ef;
+      }
+
+      .ui-state {
+        border-radius: 0.82rem;
+        padding: 0.55rem 0.65rem;
+        font-size: 0.8rem;
+        border: 1px solid;
+      }
+
+      .ui-state.empty {
+        border-color: #d1e6de;
+        background: #f7fcfa;
+        color: var(--muted);
+      }
+
+      .ui-state.loading {
+        border-color: #c8ddd5;
+        background: #f2faf6;
+        color: var(--brand-strong);
+      }
+
+      .ui-state.error {
+        border-color: #f2c4bc;
+        background: #fff1ef;
+        color: #9a2f21;
+      }
+
+      .ui-state.success {
+        border-color: #b2e0c3;
+        background: #effbf2;
+        color: #157f3b;
+      }
+
+      .messages {
+        display: grid;
+        gap: 0.5rem;
+        max-height: 430px;
+        overflow: auto;
+      }
+
+      .msg {
+        max-width: 84%;
+        border-radius: 0.9rem;
+        padding: 0.56rem 0.68rem;
+        border: 1px solid #cae2db;
+        background: #f7fcfa;
+      }
+
+      .msg.user {
+        margin-left: auto;
+        background: #dcf0ea;
+        border-color: #a9d3c8;
+      }
+
+      .msg b {
+        display: block;
+        margin-bottom: 0.22rem;
+        color: var(--muted);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .msg.typing {
+        opacity: 0.85;
+        border-style: dashed;
+      }
+
+      .typing-dots {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.22rem;
+        margin-left: 0.3rem;
+      }
+
+      .typing-dots span {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #5d7a70;
+        animation: typingPulse 1s infinite ease-in-out;
+      }
+
+      .typing-dots span:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+
+      .typing-dots span:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      @keyframes typingPulse {
+        0%,
+        80%,
+        100% {
+          transform: translateY(0);
+          opacity: 0.35;
+        }
+        40% {
+          transform: translateY(-2px);
+          opacity: 1;
+        }
+      }
+
+      .prompt-box {
+        margin-top: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 0.9rem;
+        padding: 0.7rem;
+        background: #fbfefd;
+      }
+
+      .quick-replies {
+        margin-top: 0.3rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.42rem;
+      }
+
+      .quick-reply {
+        border: 1px solid #bddbd0;
+        border-radius: 999px;
+        background: #f1faf6;
+        color: var(--brand-strong);
+        font: inherit;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 0.36rem 0.62rem;
+        cursor: pointer;
+      }
+
+      .quick-reply:hover {
+        background: #e7f6f1;
+      }
+
+      textarea {
+        width: 100%;
+        border: 1px solid #bdd7ce;
+        border-radius: 0.7rem;
+        padding: 0.6rem;
+        font: inherit;
+        resize: none;
+        margin-top: 0.55rem;
+      }
+
+      .counter-row {
+        margin-top: 0.4rem;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .char-counter {
+        color: var(--muted);
+        font-size: 0.74rem;
+      }
+
+      .guest-side {
+        padding: 0.82rem;
+        display: grid;
+        gap: 0.7rem;
+        align-content: start;
+      }
+
+      .guest-side h3 {
+        font-family: "Fraunces", serif;
+        font-size: 1.06rem;
+      }
+
+      .guest-side p {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .locked-card {
+        border: 1px dashed #c8ddd5;
+        border-radius: 0.82rem;
+        background: #f7fcfa;
+        padding: 0.7rem;
+      }
+
+      .locked-card h4 {
+        margin: 0;
+        font-family: "Fraunces", serif;
+        font-size: 0.92rem;
+      }
+
+      .locked-card p {
+        margin-top: 0.25rem;
+        font-size: 0.78rem;
+      }
+
+      .site-foot {
+        width: min(100%, 1160px);
+        margin: 0 auto;
+        color: var(--muted);
+        font-size: 0.8rem;
+        text-align: center;
+        padding-bottom: 0.5rem;
+      }
+
+      @media (max-width: 760px) {
+        .page {
+          padding: 0.7rem;
+        }
+
+        .topbar {
+          align-items: flex-start;
+          grid-template-columns: 1fr;
+        }
+
+        .topbar-nav,
+        .topbar-right {
+          justify-content: flex-start;
+        }
+
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page" id="chat-invitado">
+      <header class="topbar">
+        <div class="brand">
+          <img src="./logo alex principal sin fondo solo logo.png" alt="Logo del proyecto ALEX" />
+          <h2><a class="brand-link" href="./Mockup-01-Inicio-Publico.html">ALEX</a></h2>
+        </div>
+
+        <nav class="topbar-nav" aria-label="Navegacion principal">
+          <a class="top-nav-link" href="./Mockup-01-Inicio-Publico.html">Inicio</a>
+          <a class="top-nav-link is-active" href="./Mockup-04-Chat-Invitado.html#chat-invitado">Chat</a>
+          <a class="top-nav-link" href="./Mockup-01-Inicio-Publico.html#soporte">Soporte</a>
+          <a class="top-nav-link" href="./Mockup-01-Inicio-Publico.html#informacion">Informacion</a>
+        </nav>
+
+        <div class="topbar-right">
+          <span class="status">Modo invitado</span>
+          <a class="btn btn-primary" href="./Mockup-02-Login.html">Iniciar sesion</a>
+          <a class="btn btn-secondary" href="./Mockup-03-Registro.html">Crear cuenta</a>
+        </div>
+      </header>
+
+      <section class="guest-alert" aria-label="Aviso de funcionalidades limitadas">
+        <h3>Estas en modo invitado</h3>
+        <p>
+          Puedes consultar guidance basica en el chat, pero funciones como historial, carga de archivos, metricas,
+          configuracion de cuenta y guardado de sesiones requieren iniciar sesion.
+        </p>
+      </section>
+
+      <section class="layout" aria-label="Chat en modo invitado">
+        <article class="chat-panel">
+          <div class="chat-head">
+            <div>
+              <h1>Chat IA</h1>
+              <p>Consulta rapida sin cuenta registrada.</p>
+            </div>
+            <span class="chip">Sesion temporal</span>
+          </div>
+
+          <div class="state-strip" aria-label="Estados de chat simulados">
+            <span class="state-pill is-current">Vacio</span>
+            <span class="state-pill">Cargando</span>
+            <span class="state-pill">Error</span>
+            <span class="state-pill">Exito</span>
+          </div>
+
+          <p class="ui-state empty">Estado vacio: aun no hay historial guardado en modo invitado.</p>
+          <p class="ui-state loading">Estado cargando: generando respuesta inicial del asistente...</p>
+          <p class="ui-state error">Estado error: servicio temporalmente no disponible. Reintenta en unos segundos.</p>
+          <p class="ui-state success">Estado exito: respuesta entregada. Recuerda que no se guardara esta sesion.</p>
+
+          <div class="messages" id="guest-messages">
+            <article class="msg">
+              <b>ALEX</b>
+              Hola, estas en modo invitado. Puedo darte orientacion inicial, pero no guardare historial.
+            </article>
+            <article class="msg user">
+              <b>Tu</b>
+              Me corte con un cuchillo, que hago primero?
+            </article>
+            <article class="msg">
+              <b>ALEX</b>
+              Lava la zona con agua limpia, aplica presion para controlar el sangrado y evalua si necesitas atencion
+              medica inmediata.
+            </article>
+
+            <article id="guest-typing" class="msg typing hidden" aria-live="polite">
+              <b>ALEX</b>
+              Escribiendo respuesta
+              <span class="typing-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+            </article>
+          </div>
+
+          <section class="prompt-box">
+            <div class="quick-replies" aria-label="Respuestas rapidas">
+              <button class="quick-reply" type="button" data-reply="Como controlo un sangrado externo?">Control de sangrado</button>
+              <button class="quick-reply" type="button" data-reply="Que hago ante una quemadura leve en casa?">Quemaduras leves</button>
+              <button class="quick-reply" type="button" data-reply="Dame pasos basicos de RCP para adulto.">RCP basica</button>
+            </div>
+            <textarea id="guest-input" rows="4" maxlength="400" placeholder="Escribe tu consulta basica de primeros auxilios..."></textarea>
+            <div class="counter-row"><p id="guest-counter" class="char-counter">0/400</p></div>
+            <div class="quick-replies" style="margin-top: 0.6rem;">
+              <button id="guest-send" class="btn btn-primary" type="button">Enviar en modo invitado</button>
+              <a class="btn btn-secondary" href="./Mockup-02-Login.html">Desbloquear funciones</a>
+            </div>
+          </section>
+        </article>
+
+        <aside class="guest-side" aria-label="Funciones disponibles y bloqueadas">
+          <div>
+            <h3>Disponibles</h3>
+            <p>Chat basico, respuestas rapidas y guia inicial de emergencia.</p>
+          </div>
+
+          <article class="locked-card">
+            <h4>Historial de chats</h4>
+            <p>Bloqueado en invitado. Inicia sesion para guardar y continuar conversaciones.</p>
+          </article>
+
+          <article class="locked-card">
+            <h4>Subida de archivos</h4>
+            <p>Bloqueado en invitado. Inicia sesion para adjuntar imagenes o documentos.</p>
+          </article>
+
+          <article class="locked-card">
+            <h4>Metricas y seguimiento</h4>
+            <p>Bloqueado en invitado. Inicia sesion para personalizar tu seguimiento.</p>
+          </article>
+        </aside>
+      </section>
+
+      <footer class="site-foot">ALEX - Chat de modo invitado con funciones limitadas</footer>
+    </main>
+
+    <script>
+      (() => {
+        const quickReplies = Array.from(document.querySelectorAll('.quick-reply'));
+        const input = document.getElementById('guest-input');
+        const sendBtn = document.getElementById('guest-send');
+        const counter = document.getElementById('guest-counter');
+        const messages = document.getElementById('guest-messages');
+        const typing = document.getElementById('guest-typing');
+
+        const updateCounter = () => {
+          if (!input || !counter) {
+            return;
+          }
+          counter.textContent = `${input.value.length}/400`;
+        };
+
+        const createMessage = (author, text, isUser) => {
+          const wrapper = document.createElement('article');
+          wrapper.className = isUser ? 'msg user' : 'msg';
+          const tag = document.createElement('b');
+          tag.textContent = author;
+          wrapper.appendChild(tag);
+          wrapper.appendChild(document.createTextNode(text));
+          return wrapper;
+        };
+
+        const buildReply = (text) => {
+          const normalized = text.toLowerCase();
+          if (normalized.includes('sangrado') || normalized.includes('hemorragia')) {
+            return 'Aplica presion directa con tela limpia y eleva la zona si es posible. Si no mejora, busca atencion medica.';
+          }
+          if (normalized.includes('quemadura')) {
+            return 'Enfria la zona con agua corriente por varios minutos, sin hielo directo, y cubre con gasa limpia.';
+          }
+          if (normalized.includes('rcp')) {
+            return 'Inicia compresiones toracicas continuas y solicita ayuda de emergencia de inmediato.';
+          }
+          return 'Te comparto una guia inicial de seguridad. Si los sintomas son graves, contacta servicios de emergencia.';
+        };
+
+        const sendMessage = () => {
+          if (!input || !messages) {
+            return;
+          }
+
+          const text = input.value.trim();
+          if (!text) {
+            return;
+          }
+
+          const userMsg = createMessage('Tu', text, true);
+          messages.insertBefore(userMsg, typing);
+          input.value = '';
+          updateCounter();
+          messages.scrollTop = messages.scrollHeight;
+
+          if (typing) {
+            typing.classList.remove('hidden');
+          }
+
+          setTimeout(() => {
+            if (typing) {
+              typing.classList.add('hidden');
+            }
+            const botMsg = createMessage('ALEX', buildReply(text), false);
+            messages.insertBefore(botMsg, typing);
+            messages.scrollTop = messages.scrollHeight;
+          }, 900);
+        };
+
+        if (input) {
+          input.addEventListener('input', updateCounter);
+          input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              sendMessage();
+            }
+          });
+          updateCounter();
+        }
+
+        if (sendBtn) {
+          sendBtn.addEventListener('click', sendMessage);
+        }
+
+        if (quickReplies.length && input) {
+          quickReplies.forEach((button) => {
+            button.addEventListener('click', () => {
+              input.value = button.dataset.reply || '';
+              input.focus();
+              updateCounter();
+            });
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
+

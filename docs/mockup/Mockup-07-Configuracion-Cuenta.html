@@ -1,0 +1,594 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ALEX - Configuracion de cuenta</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap"
+    />
+    <style>
+      :root {
+        --card: #ffffff;
+        --text: #17332c;
+        --muted: #4a6158;
+        --brand: #0f766e;
+        --brand-strong: #115e59;
+        --accent: #ff7f50;
+        --border: #cee3db;
+        --shadow: 0 14px 40px rgba(23, 51, 44, 0.14);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 14% 18%, rgba(255, 127, 80, 0.22), transparent 32%),
+          radial-gradient(circle at 83% 10%, rgba(15, 118, 110, 0.2), transparent 30%),
+          linear-gradient(180deg, #f8fcfa 0%, #edf5f2 100%);
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      p {
+        margin: 0;
+      }
+
+      .page {
+        width: 100%;
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: 1.2rem;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 1rem;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.86);
+        backdrop-filter: blur(8px);
+        padding: 0.7rem 1rem;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+
+      .brand img {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+      }
+
+      .brand h2 {
+        font-family: "Fraunces", serif;
+        font-size: 1.25rem;
+        letter-spacing: 0.03em;
+        color: var(--brand-strong);
+      }
+
+      .brand-link {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .topbar-nav {
+        display: flex;
+        justify-content: center;
+        gap: 0.42rem;
+        flex-wrap: wrap;
+      }
+
+      .top-nav-link {
+        text-decoration: none;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.42rem 0.78rem;
+        color: var(--muted);
+        background: #f4fbf8;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .top-nav-link.is-active {
+        color: #ffffff;
+        border-color: var(--brand);
+        background: linear-gradient(110deg, var(--brand), #149086);
+      }
+
+      .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        flex-wrap: wrap;
+      }
+
+      .user-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border: 1px solid #badfd4;
+        background: #eaf7f2;
+        color: var(--brand-strong);
+        border-radius: 999px;
+        padding: 0.68rem 1.08rem;
+        min-height: 42px;
+        font-size: 0.88rem;
+        line-height: 1.1;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.2s ease;
+      }
+
+      .user-pill:hover {
+        border-color: #a2d0c3;
+        background: #ddf2ea;
+      }
+
+      .avatar-dot {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0f766e, #49b3aa);
+        color: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.66rem;
+        font-weight: 700;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 270px minmax(0, 1fr);
+        gap: 0.9rem;
+        align-content: start;
+      }
+
+      .menu {
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: var(--shadow);
+        padding: 0.75rem;
+        display: grid;
+        gap: 0.6rem;
+        align-content: start;
+      }
+
+      .menu h3 {
+        font-family: "Fraunces", serif;
+        font-size: 1.03rem;
+      }
+
+      .menu p {
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.4;
+      }
+
+      .menu-link {
+        border: 1px solid #cfe4dc;
+        border-radius: 0.7rem;
+        background: #f7fcfa;
+        color: var(--brand-strong);
+        text-decoration: none;
+        padding: 0.6rem 0.65rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        transition: all 0.2s ease;
+      }
+
+      .menu-link:hover {
+        background: #ecf8f3;
+      }
+
+      .menu-link.is-active {
+        border-color: var(--brand);
+        background: #e3f4ef;
+      }
+
+      .menu-note {
+        border-top: 1px solid #dbeae4;
+        padding-top: 0.55rem;
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+
+      .content {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .hero {
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        background: #ffffff;
+        box-shadow: var(--shadow);
+        padding: 0.9rem;
+      }
+
+      .hero h1 {
+        font-family: "Fraunces", serif;
+        font-size: 1.5rem;
+      }
+
+      .hero p {
+        margin-top: 0.35rem;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.7rem;
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 0.95rem;
+        background: #ffffff;
+        box-shadow: var(--shadow);
+        padding: 0.8rem;
+        display: none;
+      }
+
+      .card.is-active {
+        display: block;
+      }
+
+      .card h3 {
+        font-family: "Fraunces", serif;
+        font-size: 1.05rem;
+      }
+
+      .card p {
+        margin-top: 0.3rem;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .list {
+        margin-top: 0.55rem;
+        display: grid;
+        gap: 0.38rem;
+      }
+
+      .list-item {
+        border: 1px solid #d8e9e2;
+        border-radius: 0.62rem;
+        background: #fbfefd;
+        padding: 0.45rem 0.5rem;
+        color: var(--muted);
+        font-size: 0.79rem;
+      }
+
+      .btn-row {
+        margin-top: 0.62rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        border: 0;
+        border-radius: 999px;
+        padding: 0.66rem 1.04rem;
+        font: inherit;
+        font-size: 0.86rem;
+        font-weight: 700;
+        line-height: 1.1;
+        min-height: 42px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .btn-primary {
+        background: linear-gradient(110deg, var(--brand), #149086);
+        color: #fff;
+      }
+
+      .btn-secondary {
+        border: 1px solid #accfc4;
+        background: #eef8f4;
+        color: var(--brand-strong);
+      }
+
+      .danger {
+        border-color: #efc7be;
+        background: #fff3f1;
+      }
+
+      .danger .list-item {
+        border-color: #f0d4ce;
+        background: #fff7f5;
+        color: #7c4638;
+      }
+
+      .site-foot {
+        color: var(--muted);
+        font-size: 0.8rem;
+        text-align: center;
+        padding-bottom: 0.4rem;
+      }
+
+      .chat-launcher {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        z-index: 20;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: 1px solid #0f766e;
+        background: linear-gradient(130deg, #0f766e, #149086);
+        box-shadow: 0 12px 24px rgba(15, 118, 110, 0.34);
+        color: #ffffff;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        font-weight: 700;
+      }
+
+      @media (max-width: 960px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .cards {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .page {
+          padding: 0.7rem;
+        }
+
+        .topbar {
+          grid-template-columns: 1fr;
+          align-items: flex-start;
+        }
+
+        .topbar-nav,
+        .topbar-right {
+          justify-content: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="topbar">
+        <div class="brand">
+          <img src="./logo alex principal sin fondo solo logo.png" alt="Logo del proyecto ALEX" />
+          <h2><a class="brand-link" href="./Mockup-05-Inicio-Usuario.html#inicio">ALEX</a></h2>
+        </div>
+
+        <nav class="topbar-nav" aria-label="Navegacion principal">
+          <a class="top-nav-link" href="./Mockup-05-Inicio-Usuario.html#inicio">Inicio</a>
+          <a class="top-nav-link" href="./Mockup-06-Chat-Usuario.html#chat">Chat</a>
+          <a class="top-nav-link" href="./Mockup-05-Inicio-Usuario.html#soporte">Soporte</a>
+          <a class="top-nav-link" href="./Mockup-05-Inicio-Usuario.html#informacion">Informacion</a>
+        </nav>
+
+        <div class="topbar-right">
+          <a class="user-pill" href="./Mockup-07-Configuracion-Cuenta.html#cuenta-perfil" title="Abrir configuracion de cuenta">
+            <span class="avatar-dot">LP</span>Laura Perez
+          </a>
+          <a class="btn btn-primary" href="./Mockup-01-Inicio-Publico.html">Cerrar sesion</a>
+        </div>
+      </header>
+
+      <section class="layout" aria-label="Panel administrativo de cuenta y permisos">
+        <aside class="menu">
+          <h3>Centro de configuracion</h3>
+          <p>Gestion centralizada de cuenta, privacidad, permisos y archivos subidos.</p>
+          <a class="menu-link" href="#archivos-guia">Ajustes de archivos para la guia IA</a>
+          <a class="menu-link is-active" href="#cuenta-perfil">Perfil y datos personales</a>
+          <a class="menu-link" href="#seguridad-cuenta">Seguridad y acceso</a>
+          <a class="menu-link" href="#privacidad-permisos">Privacidad y permisos</a>
+          <a class="menu-link" href="#notificaciones">Notificaciones</a>
+          <a class="menu-link" href="#sesiones-dispositivos">Sesiones y dispositivos</a>
+          <a class="menu-link" href="#datos-cuenta">Exportar o eliminar datos</a>
+          <p class="menu-note">Mockup funcional visual. Sirve para definir flujo final del proyecto.</p>
+        </aside>
+
+        <section class="content">
+          <article class="hero">
+            <h1 id="section-title">Perfil y datos personales</h1>
+            <p id="section-subtitle">Configura la informacion base de tu cuenta y tus datos de contacto.</p>
+          </article>
+
+          <section class="cards">
+            <article id="archivos-guia" class="card" data-title="Ajustes de archivos para la guia IA" data-subtitle="Define que puede hacer ALEX con los archivos que subes.">
+              <h3>Ajustes de archivos para la guia IA</h3>
+              <p>Configura exactamente como ALEX procesa los archivos que subes.</p>
+              <div class="list">
+                <div class="list-item">Lectura de PDF e imagenes: Activada</div>
+                <div class="list-item">Extraccion de texto automatico (OCR): Activada</div>
+                <div class="list-item">Retencion temporal de archivos: 24 horas</div>
+                <div class="list-item">Permitir que la guia cite fragmentos del archivo: Activado</div>
+                <div class="list-item">Compartir archivos con profesionales externos: Desactivado</div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary" type="button">Guardar ajustes</button>
+                <button class="btn btn-secondary" type="button">Restaurar valores</button>
+              </div>
+            </article>
+
+            <article id="cuenta-perfil" class="card is-active" data-title="Perfil y datos personales" data-subtitle="Configura la informacion base de tu cuenta y tus datos de contacto.">
+              <h3>Perfil y datos personales</h3>
+              <p>Actualiza informacion basica, contacto y datos clinicos de referencia.</p>
+              <div class="list">
+                <div class="list-item">Nombre completo, fecha de nacimiento y genero</div>
+                <div class="list-item">Telefono, correo y contacto de emergencia</div>
+                <div class="list-item">Alergias, condiciones previas y medicacion habitual</div>
+                <div class="list-item">Idiomas y formato de respuesta de ALEX</div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary" type="button">Editar perfil</button>
+                <button class="btn btn-secondary" type="button">Actualizar contacto</button>
+              </div>
+            </article>
+
+            <article id="seguridad-cuenta" class="card" data-title="Seguridad y acceso" data-subtitle="Protege tu cuenta con controles de autenticacion y recuperacion.">
+              <h3>Seguridad y acceso</h3>
+              <p>Protege tu cuenta y controla el acceso a la plataforma.</p>
+              <div class="list">
+                <div class="list-item">Cambiar contrasena</div>
+                <div class="list-item">Activar verificacion en dos pasos</div>
+                <div class="list-item">Codigo de recuperacion y correo secundario</div>
+                <div class="list-item">Bloqueo automatico por inactividad</div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary" type="button">Gestionar seguridad</button>
+              </div>
+            </article>
+
+            <article id="privacidad-permisos" class="card" data-title="Privacidad y permisos" data-subtitle="Administra quien puede ver tu informacion y para que se usa.">
+              <h3>Privacidad y permisos</h3>
+              <p>Decide quien puede ver tus datos y como se usan dentro del sistema.</p>
+              <div class="list">
+                <div class="list-item">Visibilidad del historial de consultas</div>
+                <div class="list-item">Permisos para uso de datos anonimizados</div>
+                <div class="list-item">Permiso para recomendaciones proactivas</div>
+                <div class="list-item">Control de cookies y analitica</div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-primary" type="button">Guardar privacidad</button>
+              </div>
+            </article>
+
+            <article id="notificaciones" class="card" data-title="Notificaciones y recordatorios" data-subtitle="Controla alertas, canales de aviso y frecuencia de comunicacion.">
+              <h3>Notificaciones y recordatorios</h3>
+              <p>Configura avisos del sistema para seguimiento y seguridad.</p>
+              <div class="list">
+                <div class="list-item">Recordatorios de tratamiento y control de sintomas</div>
+                <div class="list-item">Alertas por respuestas criticas de la guia</div>
+                <div class="list-item">Canales: correo, push y SMS</div>
+                <div class="list-item">Frecuencia diaria, semanal o solo urgencias</div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-secondary" type="button">Configurar avisos</button>
+              </div>
+            </article>
+
+            <article id="sesiones-dispositivos" class="card" data-title="Sesiones y dispositivos" data-subtitle="Revisa accesos activos y cierra sesiones que no reconozcas.">
+              <h3>Sesiones y dispositivos</h3>
+              <p>Revisa donde esta abierta tu cuenta y cierra accesos no deseados.</p>
+              <div class="list">
+                <div class="list-item">Laptop personal - Sesion activa</div>
+                <div class="list-item">Movil Android - Activa hace 2 horas</div>
+                <div class="list-item">Cerrar otras sesiones</div>
+                <div class="list-item">Historial de inicios de sesion</div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-secondary" type="button">Administrar dispositivos</button>
+              </div>
+            </article>
+
+            <article id="datos-cuenta" class="card danger" data-title="Datos de cuenta y acciones avanzadas" data-subtitle="Exporta, desactiva o elimina tu cuenta de forma administrada.">
+              <h3>Datos de cuenta y acciones avanzadas</h3>
+              <p>Acciones comunes de administracion para control total de la informacion.</p>
+              <div class="list">
+                <div class="list-item">Exportar historial y archivos en formato ZIP</div>
+                <div class="list-item">Descargar reporte de actividad de cuenta</div>
+                <div class="list-item">Solicitar correccion de datos personales</div>
+                <div class="list-item">Desactivar cuenta temporalmente</div>
+                <div class="list-item">Eliminar cuenta y datos de forma permanente</div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-secondary" type="button">Exportar datos</button>
+                <button class="btn btn-secondary" type="button">Desactivar cuenta</button>
+                <button class="btn btn-primary" type="button">Eliminar cuenta</button>
+              </div>
+            </article>
+          </section>
+        </section>
+      </section>
+
+      <footer class="site-foot">ALEX - Panel de administracion de cuenta y permisos</footer>
+    </main>
+
+    <a class="chat-launcher" href="./Mockup-06-Chat-Usuario.html#chat" aria-label="Abrir chat">ðŸ’¬</a>
+
+    <script>
+      (() => {
+        const defaultSection = 'cuenta-perfil';
+        const cards = Array.from(document.querySelectorAll('.cards .card'));
+        const links = Array.from(document.querySelectorAll('.menu .menu-link'));
+        const title = document.getElementById('section-title');
+        const subtitle = document.getElementById('section-subtitle');
+
+        if (!cards.length || !links.length) {
+          return;
+        }
+
+        const showSection = (id) => {
+          const targetCard = cards.find((card) => card.id === id) || cards.find((card) => card.id === defaultSection);
+
+          cards.forEach((card) => {
+            card.classList.toggle('is-active', card === targetCard);
+          });
+
+          links.forEach((link) => {
+            const isCurrent = link.getAttribute('href') === `#${targetCard.id}`;
+            link.classList.toggle('is-active', isCurrent);
+          });
+
+          if (title && targetCard.dataset.title) {
+            title.textContent = targetCard.dataset.title;
+          }
+
+          if (subtitle && targetCard.dataset.subtitle) {
+            subtitle.textContent = targetCard.dataset.subtitle;
+          }
+
+          if (window.location.hash !== `#${targetCard.id}`) {
+            history.replaceState(null, '', `#${targetCard.id}`);
+          }
+        };
+
+        const fromHash = () => {
+          const id = window.location.hash ? window.location.hash.slice(1) : defaultSection;
+          showSection(id);
+        };
+
+        links.forEach((link) => {
+          link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const id = (link.getAttribute('href') || '').replace('#', '');
+            showSection(id);
+          });
+        });
+
+        window.addEventListener('hashchange', fromHash);
+        fromHash();
+      })();
+    </script>
+  </body>
+</html>
+
