@@ -31,4 +31,20 @@ export function getApiError(error) {
   return message;
 }
 
+/**
+ * Sube un archivo al backend para extraer su texto y obtener la respuesta de ALEX.
+ * @param {File} file - Archivo a analizar (PDF, DOCX, TXT…)
+ * @param {string} [prompt] - Pregunta opcional sobre el documento
+ */
+export async function uploadDocument(file, prompt = '') {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (prompt) formData.append('prompt', prompt);
+
+  return api.post('/api/ai/document/analyze', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000,
+  });
+}
+
 export default api;
