@@ -19,6 +19,17 @@ services:
     networks:
       - alex_net
 
+  chroma:
+    image: chromadb/chroma
+    container_name: alex_chroma
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/.chroma/index
+    networks:
+      - alex_net
+
   backend:
     build:
       context: ./backend/express-ts-openai
@@ -36,6 +47,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      chroma:
+        condition: service_started
     networks:
       - alex_net
 
@@ -63,3 +76,4 @@ networks:
 
 volumes:
   postgres_data:
+  chroma_data:
