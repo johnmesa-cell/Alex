@@ -40,6 +40,8 @@ services:
     volumes:
       - ./backend/express-ts-openai:/app
       - /app/node_modules
+      - ./backend/express-ts-openai/uploads:/app/uploads
+      - ./backend/express-ts-openai/temp_voice:/app/temp_voice
     ports:
       - "3000:3000"
     env_file:

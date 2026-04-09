@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { setAIRoutes } from "./routes/ai.routes.js";
 import { setAuthRoutes } from "./routes/auth.routes.js";
 import { setFirstAidRoutes } from "./routes/firstaid.routes.js";
+import { setVoiceRoutes } from "./routes/voice.routes.js";
 
 dotenv.config();
 
@@ -49,6 +50,7 @@ app.get("/", (req, res) => {
 setAIRoutes(app);
 setAuthRoutes(app);
 setFirstAidRoutes(app); // Añadir las nuevas rutas
+setVoiceRoutes(app); // Añadir las nuevas rutas de voz
 
 // CAMBIO CRÍTICO: Escuchar en '0.0.0.0' para aceptar conexiones externas
 app.listen(PORT, '0.0.0.0', () => {
