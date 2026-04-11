@@ -30,6 +30,7 @@ model Usuario {
   registros      Registro[]
   reportes       reportes[]
   sesiones       Sesion[]
+  consultas      Consulta[]
   roles          Rol              @relation(fields: [id_rol], references: [id_rol], onUpdate: NoAction, map: "fk_usuario_rol")
 
   @@map("usuario")
@@ -107,3 +108,16 @@ model reportes_programados {
   reportes                reportes  @relation(fields: [id_reporte], references: [id_reporte], onDelete: Cascade, onUpdate: NoAction, map: "fk_programacion_reporte")
 }
 
+
+model Consulta {
+  id_consulta    Int       @id @default(autoincrement()) @map("idconsulta")
+  id_usuario     Int       @map("idusuario")
+  asunto         String    @db.VarChar(200)
+  mensaje        String    @db.Text
+  respuesta_ia   String?   @db.Text @map("respuestaia")
+  fecha_creacion DateTime? @default(now()) @db.Timestamp(6) @map("fechacreacion")
+  estado         String?   @default("abierta") @db.VarChar(20)
+  usuario        Usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction, map: "fk_consulta_usuario")
+
+  @@map("consultas")
+}
