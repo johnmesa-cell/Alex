@@ -1,7 +1,8 @@
 FROM node:18-slim
 
-# Instalar dependencias del sistema para gTTS (Python es necesario por gTTS en algunas versiones de node-gtts)
-RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+# Instalar dependencias del sistema para gTTS (Python es necesario por gTTS y ffmpeg en algunas versiones de node-gtts)
+
+RUN apt-get update && apt-get install -y python3 make g++ ffmpeg && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY package*.json ./
