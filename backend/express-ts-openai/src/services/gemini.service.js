@@ -4,6 +4,8 @@ function getGeminiClient() {
     // Soporta ambos nombres comunes de variable para evitar errores de entorno.
     const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
 
+    console.log("API KEY:", apiKey);
+
     if (!apiKey) {
         throw new Error("GEMINI_API_KEY no esta configurada en el entorno del backend.");
     }
@@ -21,7 +23,7 @@ Instrucciones estrictas:
 export const getGeminiGuidance = async (userMessage) => {
     try {
         const genAI = getGeminiClient();
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const result = await model.generateContent(`${SYSTEM_INSTRUCTION}\n\nPregunta del usuario: ${userMessage}`);
         const response = await result.response;
@@ -29,6 +31,35 @@ export const getGeminiGuidance = async (userMessage) => {
 
     } catch (error) {
         console.error("--- ERROR EN GEMINI ---");
+        console.error("Mensaje:", error.message);
+        throw new Error(`Google dice: ${error.message}`);
+    }
+};
+
+export const getGeminiResponseWithContext = async (question, context) => {
+    try {
+        const genAI = getGeminiClient();
+        const GEMINI_MODEL_NAME = "gemini-1.5-flash";
+const model = genAI.getGenerativeModel({ model: GEMINI_MODEL_NAME }); // Usamos un modelo más potente para RAG
+
+        const prompt = `
+${SYSTEM_INSTRUCTION}
+
+--- INICIO DEL CONTEXTO DE REFERENCIA ---
+${context}
+--- FIN DEL CONTEXTO DE REFERENCIA ---
+
+Basándote ESTRICTA Y ÚNICAMENTE en el contexto de referencia anterior, responde la siguiente pregunta. Si la respuesta no se encuentra en el contexto, indica que no tienes información al respecto en tus documentos.
+
+Pregunta del usuario: ${question}
+`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+
+    } catch (error) {
+        console.error("--- ERROR EN GEMINI CON CONTEXTO ---");
         console.error("Mensaje:", error.message);
         throw new Error(`Google dice: ${error.message}`);
     }

@@ -17,3 +17,16 @@ Content-Type: application/json
   "correo": "juan@alex.com",
   "password": "AlexPassword123"
 }
+
+### Probar Asistente de Voz (Audio MP3)
+# Requisito: El archivo debe estar en 'backend/express-ts-openai/test-audio/'
+POST http://localhost:3000/api/asistente-voz
+Authorization: Bearer TU_TOKEN_AQUI
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="audio"; filename="Introducción a los #PrimerosAuxilios básicos.mp3"
+Content-Type: audio/mpeg
+
+< ./express-ts-openai/test-audio/Introduccion%20a%20los%20%23PrimerosAuxilios%20basicos.mp3
+--boundary--
