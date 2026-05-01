@@ -3,7 +3,7 @@ name: Sync to GitLab
 on:
   push:
     branches:
-      - main  # Cambia 'main' por tu rama principal si se llama diferente
+      - main
 
 jobs:
   sync:
@@ -12,10 +12,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Necesario para traer todo el historial
-      - name: Sync to GitLab
-        uses: keninkujovic/gitlab-sync@2.1.0
-        with:
-          gitlab_url: ${{ secrets.GITLAB_URL }}
-          username: ${{ secrets.USERNAME }}
-          gitlab_pat: ${{ secrets.GITLAB_PAT }}
+          fetch-depth: 0
+      - name: Push to GitLab
+        run: |
+          git remote add gitlab https://${{ secrets.USERNAME }}:${{ secrets.GITLAB_PAT }}@${{ secrets.GITLAB_URL }}
+          git push gitlab main --force
