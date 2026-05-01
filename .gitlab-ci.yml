@@ -61,6 +61,6 @@ deploy:
     - ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    - ssh $SERVER_USER@$SERVER_IP "cd /home/ubuntu/Alex && git fetch origin && git reset --hard origin/main && echo 'Despliegue exitoso'"
+    - ssh $SERVER_USER@$SERVER_IP "cd /home/ubuntu/Alex && git fetch origin && git reset --hard origin/main && echo '--- Estado de los contenedores ---' && sudo docker ps"
   only:
     - main
