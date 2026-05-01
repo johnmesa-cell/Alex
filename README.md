@@ -141,6 +141,7 @@ Para profundizar en aspectos específicos del Avance 2:
 - [Reporte Técnico de Métricas](docs/Implementacion-Metricas-ALEX-53.md)
 - [Gestión de Audio y Archivos](docs/Implementacion-Audio-Archivos-2026.md)
 - [Arquitectura de Autenticación](backend/AUTH_DOCUMENTATION.md)
+- [Pipeline de CI/CD — Documentación Completa](docs/Pipeline-CICD.md)
 
 ---
 *Este proyecto representa el esfuerzo por democratizar el acceso a la orientación médica de calidad mediante tecnología de vanguardia.*
