@@ -97,6 +97,44 @@ ALEX no es solo un chat; es un sistema inteligente capaz de:
    docker-compose up --build
    ```
 
+## 🚀 Pipeline de Integración Continua (CI/CD)
+
+Este proyecto utiliza *GitLab CI/CD* para automatizar la construcción,
+validación y despliegue de la aplicación.
+
+### Estructura del Pipeline
+El pipeline consta de tres etapas (stages):
+
+1. *Build:*
+   - Instala las dependencias del Backend y el Frontend.
+   - Genera los archivos de producción del Frontend (dist/) usando Vite.
+   - Almacena los resultados en *artifacts* para las siguientes etapas.
+
+2. *Test:*
+   - Ejecuta las pruebas del Backend y el Frontend.
+   - Tiene activado allow_failure: true para reportar el estado
+     sin bloquear el deploy.
+
+3. *Deploy:*
+   - Se activa exclusivamente en la rama main.
+   - Usa conexión segura vía *SSH* con variables protegidas.
+   - Actualiza el código en el servidor remoto con los últimos cambios.
+
+### Cómo se activa
+El pipeline se dispara *automáticamente* con cada git push a la
+rama main, ejecutando todos los stages en orden.
+
+### Variables de Entorno Utilizadas
+Configuradas como variables protegidas en GitLab
+(Settings > CI/CD > Variables):
+
+| Variable | Descripción |
+|---|---|
+| $SSH_PRIVATE_KEY | Clave privada SSH para acceder al servidor |
+| $SERVER_IP | Dirección IP del servidor de despliegue |
+| $SERVER_USER | Usuario del servidor (ej. ubuntu) |
+   
+
 ## 📄 Documentación Seleccionada
 Para profundizar en aspectos específicos del Avance 2:
 - [Guía de Integración Gemini & OpenClaw](docs/integration_guide_OpenClaw_Gemini_Live.md)
