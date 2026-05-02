@@ -61,6 +61,25 @@ deploy:
     - ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    - ssh $SERVER_USER@$SERVER_IP "cd /home/ubuntu/Alex && git fetch origin && git reset --hard origin/main && echo '--- Estado de los contenedores ---' && sudo docker ps"
+    - |
+      ssh $SERVER_USER@$SERVER_IP <<'EOF'
+        set -e
+        PROJECT_DIR="/home/ubuntu/Alex"
+
+        echo '--- Estado de los contenedores ANTES de los cambios ---'
+        sudo docker compose --project-directory $PROJECT_DIR ps
+
+        echo '--- Actualizando código ---'
+        cd $PROJECT_DIR
+        git fetch origin
+        git reset --hard origin/main
+
+        echo '--- Reconstruyendo contenedores ---'
+        sudo docker compose --project-directory $PROJECT_DIR down
+        sudo docker compose --project-directory $PROJECT_DIR up --build -d
+
+        echo '--- Estado de los contenedores DESPUÉS de los cambios ---'
+        sudo docker compose --project-directory $PROJECT_DIR ps
+      EOF
   only:
     - main
