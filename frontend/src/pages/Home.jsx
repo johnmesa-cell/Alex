@@ -36,7 +36,7 @@ function Home() {
       </div>
 
       <aside className="hero-card slide-in">
-        <h2>Capacidades v1</h2>
+        <h2>Capacidades</h2>
         <ul>
           <li>Registro con nombre, email y password</li>
           <li>Login con persistencia local de sesion</li>
