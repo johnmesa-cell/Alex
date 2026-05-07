@@ -1,5 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
 import { setAIRoutes } from "./routes/ai.routes.js";
@@ -24,11 +25,13 @@ app.use(
                 return callback(null, true);
             }
             return callback(new Error(`CORS bloqueado para origin: ${origin}`));
-        }
+        },
+        credentials: true  // Permitir envío de cookies
     })
 );
 
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
     res.status(200).json({

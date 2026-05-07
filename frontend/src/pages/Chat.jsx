@@ -31,7 +31,7 @@ function Chat() {
     setMessages((prev) => [...prev, { role: 'user', text: cleanPrompt }]);
 
     try {
-      const { data } = await api.post('/api/ai/guidance', { prompt: cleanPrompt });
+      const { data } = await api.post('/ai/guidance', { prompt: cleanPrompt });
       const answer = data?.data?.respuesta || 'No se recibio respuesta valida del servidor.';
 
       setMessages((prev) => [...prev, { role: 'assistant', text: answer }]);

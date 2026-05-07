@@ -6,6 +6,7 @@ export const setAuthRoutes = (app) => {
 
     router.post("/register", authController.register);
     router.post("/login", authController.login);
+    router.post("/logout", authController.logout);
 
     app.use("/auth", router);
 };

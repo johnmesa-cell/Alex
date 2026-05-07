@@ -1,30 +1,37 @@
 import jwt from 'jsonwebtoken';
-
-// Configuración
-const JWT_SECRET = process.env.JWT_SECRET || 'alex_super_secret_key_2026';
+import config from '../config/index.js';
 
 /**
  * @middleware verifyToken
  * @description Verifica que el JWT sea válido y extrae la información del usuario
- * Espera un token en el header: Authorization: Bearer <token>
+ * Busca el token en:
+ * 1. Header: Authorization: Bearer <token>
+ * 2. Cookie: alex_token (httpOnly)
  */
 export const verifyToken = (req, res, next) => {
   try {
-    // Obtener el token del header Authorization
-    const authHeader = req.headers.authorization;
+    let token = null;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Intentar obtener token del header Authorization
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+
+    // Si no hay en header, intentar obtener de cookies (para httpOnly)
+    if (!token && req.cookies && req.cookies.alex_token) {
+      token = req.cookies.alex_token;
+    }
+
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: 'Token no proporcionado o formato inválido',
       });
     }
 
-    // Extraer el token
-    const token = authHeader.split(' ')[1];
-
     // Verificar el token
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, config.jwtSecret);
 
     // Almacenar la información del usuario en la solicitud
     req.usuario = decoded;
@@ -57,7 +64,7 @@ export const verifyToken = (req, res, next) => {
 /**
  * @middleware verifyRole
  * @description Verifica que el usuario tenga un rol específico
- * @param {Array<string>} rolesPermitidos - Array de roles permitidos (ej: ['admin', 'moderador'])
+ * @param {Array<number>} rolesPermitidos - Array de IDs de roles permitidos (ej: [1, 2])
  */
 export const verifyRole = (rolesPermitidos = []) => {
   return (req, res, next) => {
@@ -71,7 +78,7 @@ export const verifyRole = (rolesPermitidos = []) => {
       }
 
       // Verificar si el rol del usuario está en los permitidos
-      if (!rolesPermitidos.includes(req.usuario.nombrerol)) {
+      if (!rolesPermitidos.includes(req.usuario.roleId)) {
         return res.status(403).json({
           success: false,
           message: 'No tienes permisos para acceder a este recurso',

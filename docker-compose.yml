@@ -25,7 +25,7 @@ services:
       - ./backend/express-ts-openai:/app
       - /app/node_modules
     ports:
-      - "3000:3000"
+      - "3002:3000"
     # CAMBIO AQUÍ: Busca el .env en la ubicación correcta
     env_file:
       - ./backend/express-ts-openai/.env 
@@ -45,9 +45,8 @@ services:
       - /app/node_modules
     ports:
       - "5173:5173"
-    # También puedes añadirlo al frontend si necesitas variables ahí
     env_file:
-      - .env
+      - ./frontend/.env
     networks:
       - alex_net
 
