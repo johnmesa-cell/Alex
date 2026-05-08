@@ -1,25 +1,30 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL:
-    import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 20000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true  // Enviar cookies automáticamente en cada request
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('alex_token');
+let onTokenExpired = null;
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+export function setTokenExpiredCallback(callback) {
+  onTokenExpired = callback;
+}
+
+// Interceptor de respuesta para manejar errores 401
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('alex_token');
+      localStorage.removeItem('alex_user');
+      if (onTokenExpired) onTokenExpired();
+    }
+    return Promise.reject(error);
   }
-
-  return config;
-});
+);
 
 export function getApiError(error) {
   const message =
@@ -27,7 +32,6 @@ export function getApiError(error) {
     error?.response?.data?.error ||
     error?.message ||
     'Ocurrio un error inesperado';
-
   return message;
 }
 

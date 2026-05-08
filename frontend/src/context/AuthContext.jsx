@@ -1,23 +1,22 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api.js';
+import api, { setTokenExpiredCallback } from '../services/api.js';
 
 const AuthContext = createContext(null);
 
-const TOKEN_KEY = 'alex_token';
 const USER_KEY = 'alex_user';
 
 function normalizeUser(payload = {}) {
   return {
-    id: payload.id_usuario || payload.idusuario || payload.id || null,
+    id: payload.id || payload.id_usuario || payload.idusuario || null,
     nombre: payload.nombre || '',
     correo: payload.correo || payload.email || '',
-    idRol: payload.id_rol || payload.idrol || null
+    idRol: payload.idRol || payload.id_rol || payload.idrol || null,
+    fechaRegistro: payload.fechaRegistro || payload.fecha_registro || null
   };
 }
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(localStorage.getItem(TOKEN_KEY));
   const [user, setUser] = useState(() => {
     const raw = localStorage.getItem(USER_KEY);
     if (!raw) {
@@ -31,17 +30,19 @@ export function AuthProvider({ children }) {
     }
   });
 
-  const saveSession = (nextToken, nextUser) => {
-    setToken(nextToken);
+  useEffect(() => {
+    setTokenExpiredCallback(() => {
+      clearSession();
+    });
+  }, []);
+
+  const saveSession = (nextUser) => {
     setUser(nextUser);
-    localStorage.setItem(TOKEN_KEY, nextToken);
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
   };
 
   const clearSession = () => {
-    setToken(null);
     setUser(null);
-    localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
   };
 
@@ -49,41 +50,37 @@ export function AuthProvider({ children }) {
     const { data } = await api.post('/auth/register', formData);
     return {
       message: data?.message || 'Registro completado',
-      user: normalizeUser(data?.user || {})
+      user: normalizeUser(data?.data?.user || {})
     };
   };
 
   const login = async (credentials) => {
     const { data } = await api.post('/auth/login', credentials);
-    const nextToken = data?.token;
-    const nextUser = normalizeUser(data?.user || {});
-
-    if (!nextToken) {
-      throw new Error('El backend no devolvio token en login.');
-    }
-
-    saveSession(nextToken, nextUser);
+    const nextUser = normalizeUser(data?.data?.user || {});
+    saveSession(nextUser);
     return {
       message: data?.message || 'Sesion iniciada',
-      token: nextToken,
       user: nextUser
     };
   };
 
-  const logout = () => {
-    clearSession();
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      clearSession();
+    }
   };
 
   const value = useMemo(
     () => ({
-      token,
       user,
-      isAuthenticated: Boolean(token),
+      isAuthenticated: Boolean(user),
       register,
       login,
       logout
     }),
-    [token, user]
+    [user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -101,8 +98,8 @@ export function useLogoutAndRedirect(path = '/login') {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  return () => {
-    logout();
+  return async () => {
+    await logout();
     navigate(path, { replace: true });
   };
 }
