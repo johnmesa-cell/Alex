@@ -1,6 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { setAIRoutes } from "./routes/ai.routes.js";
 import { setAuthRoutes } from "./routes/auth.routes.js";
@@ -26,9 +27,13 @@ const defaultOrigins = [
     "http://127.0.0.1"
 ];
 
-const allowedOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean)
-    : defaultOrigins;
+const allowedOrigins = [
+    process.env.FRONTEND_ORIGIN,
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost",
+    "http://127.0.0.1"
+].filter(Boolean);
 
 app.use(
     cors({
@@ -46,11 +51,13 @@ app.use(
 );
 
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
     res.status(200).json({
         message: "ALEX API is running",
         status: "ok",
+        version: "1.0.0"
     });
 });
 
