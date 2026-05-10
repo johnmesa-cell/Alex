@@ -19,25 +19,26 @@ const MOCK_HISTORIAL = [
   { id: 4, fecha: '07 may', resumen: 'Atragantamiento en niños' },
 ];
 
-// iconos SVG inline simples
 const IconHistory = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/>
-    <polyline points="12 6 12 12 16 14"/>
+    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
   </svg>
 );
 const IconMetrics = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="20" x2="18" y2="10"/>
-    <line x1="12" y1="20" x2="12" y2="4"/>
-    <line x1="6" y1="20" x2="6" y2="14"/>
+    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+  </svg>
+);
+const IconSettings = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
   </svg>
 );
 
 function Chat() {
   const { isAuthenticated, user } = useAuth();
 
-  // Chat
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState([
     {
@@ -51,16 +52,12 @@ function Chat() {
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
 
-  // Sidebar izquierdo colapsable
-  // activePanel: null | 'historial' | 'metricas'
   const [activePanel, setActivePanel] = useState(null);
   const togglePanel = (panel) => setActivePanel((prev) => (prev === panel ? null : panel));
 
-  // Voz
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
 
-  // Archivos (panel derecho)
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileError, setFileError] = useState('');
   const [fileSuccess, setFileSuccess] = useState('');
@@ -114,7 +111,7 @@ function Chat() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > MAX_FILE_MB * 1024 * 1024) {
-      setFileError(`El archivo supera el límite de ${MAX_FILE_MB} MB.`);
+      setFileError(`El archivo supera el límite de ${MAX_FILE_MB} MB.`);
       return;
     }
     setSelectedFile(file);
@@ -142,23 +139,13 @@ function Chat() {
 
   return (
     <div className="chat-page">
-      {/* Banner invitado */}
-      {!isAuthenticated && (
-        <div className="guest-alert" role="alert">
-          <strong>Estás en modo invitado.</strong>{' '}
-          Historial, archivos y configuración requieren sesión iniciada.{' '}
-          <Link to="/login" className="guest-alert__link">Iniciar sesión</Link>{' '}o{' '}
-          <Link to="/register" className="guest-alert__link">crear cuenta</Link>.
-        </div>
-      )}
 
-      <div className={`chat-layout${isAuthenticated ? ' chat-layout--auth' : ''}`}>
-
-        {/* ======== SIDEBAR IZQUIERDO COLAPSABLE (solo autenticado) ======== */}
-        {isAuthenticated && (
-          <div className="chat-rail">
-            {/* Iconos siempre visibles */}
-            <div className="rail-icons">
+      {/* ======== RAIL IZQUIERDO FIJO (solo autenticado) ======== */}
+      {isAuthenticated && (
+        <>
+          <nav className="chat-rail">
+            {/* Iconos top */}
+            <div className="rail-top">
               <button
                 type="button"
                 className={`rail-btn${activePanel === 'historial' ? ' rail-btn--active' : ''}`}
@@ -178,62 +165,75 @@ function Chat() {
                 <IconMetrics />
               </button>
             </div>
+            {/* Icono configuración abajo */}
+            <div className="rail-bottom">
+              <button type="button" className="rail-btn" title="Configuración" aria-label="Configuración">
+                <IconSettings />
+              </button>
+            </div>
+          </nav>
 
-            {/* Drawer que se despliega al lado del rail */}
-            {activePanel && (
-              <div className="rail-drawer" role="region" aria-label={activePanel}>
-                <div className="rail-drawer__head">
-                  <span className="rail-drawer__title">
-                    {activePanel === 'historial' ? 'Historial' : 'Métricas'}
-                  </span>
-                  <button
-                    type="button"
-                    className="rail-drawer__close"
-                    onClick={() => setActivePanel(null)}
-                    aria-label="Cerrar panel"
-                  >×</button>
-                </div>
-
-                {activePanel === 'historial' && (
-                  <>
-                    <button type="button" className="sidebar-new-btn">+ Nueva consulta</button>
-                    <ul className="historial-list">
-                      {MOCK_HISTORIAL.map((h) => (
-                        <li key={h.id} className="historial-item">
-                          <span className="historial-fecha">{h.fecha}</span>
-                          <span className="historial-resumen">{h.resumen}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-
-                {activePanel === 'metricas' && (
-                  <ul className="metrics-list">
-                    <li className="metric-item">
-                      <span className="metric-label">Consultas sesión</span>
-                      <span className="metric-value">{messages.filter(m => m.role === 'user').length}</span>
-                    </li>
-                    <li className="metric-item">
-                      <span className="metric-label">Mensajes totales</span>
-                      <span className="metric-value">{messages.length}</span>
-                    </li>
-                    <li className="metric-item">
-                      <span className="metric-label">Historial guardado</span>
-                      <span className="metric-value">{MOCK_HISTORIAL.length}</span>
-                    </li>
-                    <li className="metric-item">
-                      <span className="metric-label">Usuario</span>
-                      <span className="metric-value">{user?.nombre || '—'}</span>
-                    </li>
-                  </ul>
-                )}
+          {/* Drawer que se despliega sobre el contenido, pegado al rail */}
+          {activePanel && (
+            <div className="rail-drawer" role="region" aria-label={activePanel}>
+              <div className="rail-drawer__head">
+                <span className="rail-drawer__title">
+                  {activePanel === 'historial' ? 'Historial' : 'Métricas'}
+                </span>
+                <button type="button" className="rail-drawer__close" onClick={() => setActivePanel(null)} aria-label="Cerrar panel">×</button>
               </div>
-            )}
+
+              {activePanel === 'historial' && (
+                <>
+                  <button type="button" className="sidebar-new-btn">+ Nueva consulta</button>
+                  <ul className="historial-list">
+                    {MOCK_HISTORIAL.map((h) => (
+                      <li key={h.id} className="historial-item">
+                        <span className="historial-fecha">{h.fecha}</span>
+                        <span className="historial-resumen">{h.resumen}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {activePanel === 'metricas' && (
+                <ul className="metrics-list">
+                  <li className="metric-item">
+                    <span className="metric-label">Consultas sesión</span>
+                    <span className="metric-value">{messages.filter(m => m.role === 'user').length}</span>
+                  </li>
+                  <li className="metric-item">
+                    <span className="metric-label">Mensajes totales</span>
+                    <span className="metric-value">{messages.length}</span>
+                  </li>
+                  <li className="metric-item">
+                    <span className="metric-label">Historial guardado</span>
+                    <span className="metric-value">{MOCK_HISTORIAL.length}</span>
+                  </li>
+                  <li className="metric-item">
+                    <span className="metric-label">Usuario</span>
+                    <span className="metric-value">{user?.nombre || '—'}</span>
+                  </li>
+                </ul>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ======== CONTENIDO CENTRAL ======== */}
+      <div className="chat-content">
+        {/* Banner invitado */}
+        {!isAuthenticated && (
+          <div className="guest-alert" role="alert">
+            <strong>Estás en modo invitado.</strong>{' '}
+            Historial, archivos y configuración requieren sesión iniciada.{' '}
+            <Link to="/login" className="guest-alert__link">Iniciar sesión</Link>{' '}o{' '}
+            <Link to="/register" className="guest-alert__link">crear cuenta</Link>.
           </div>
         )}
 
-        {/* ======== PANEL PRINCIPAL ======== */}
         <section className="chat-panel">
           <div className="chat-head">
             <div>
@@ -291,45 +291,45 @@ function Chat() {
             </div>
           </form>
         </section>
-
-        {/* ======== PANEL DERECHO: archivos (autenticado) o bloqueados (invitado) ======== */}
-        <aside className="chat-side">
-          {isAuthenticated ? (
-            <div className="side-content">
-              <span className="sidebar-section__title">Adjuntar archivo</span>
-              <p className="sidebar-hint">PDF, PNG, JPG — máx. {MAX_FILE_MB} MB</p>
-              <label className="file-drop" htmlFor="file-input">
-                {selectedFile ? (
-                  <span className="file-selected">
-                    📎 {selectedFile.name}
-                    <button type="button" className="file-remove" onClick={(e) => { e.preventDefault(); removeFile(); }}>×</button>
-                  </span>
-                ) : (
-                  <span>Haz clic o arrastra un archivo</span>
-                )}
-              </label>
-              <input id="file-input" ref={fileInputRef} type="file" accept={ACCEPTED_TYPES} onChange={handleFileChange} className="file-input-hidden" />
-              {fileError && <p className="error-box">{fileError}</p>}
-              {fileSuccess && <p className="success-box">{fileSuccess}</p>}
-              <button type="button" className="btn-primary" style={{ width: '100%' }} disabled={!selectedFile} onClick={handleFileUpload}>
-                Subir archivo
-              </button>
-            </div>
-          ) : (
-            <>
-              <div>
-                <h3>Disponibles</h3>
-                <p>Chat básico, respuestas rápidas y guía inicial.</p>
-              </div>
-              <div className="locked-card"><h4>Historial</h4><p>Inicia sesión para guardar conversaciones.</p></div>
-              <div className="locked-card"><h4>Subida de archivos</h4><p>Inicia sesión para adjuntar documentos.</p></div>
-              <div className="locked-card"><h4>Métricas</h4><p>Inicia sesión para ver tu actividad.</p></div>
-              <Link to="/register" className="btn-primary" style={{ textAlign: 'center' }}>Crear cuenta gratis</Link>
-            </>
-          )}
-        </aside>
-
       </div>
+
+      {/* ======== PANEL DERECHO FIJO: archivos ======== */}
+      <aside className="chat-side">
+        {isAuthenticated ? (
+          <div className="side-content">
+            <span className="sidebar-section__title">Adjuntar archivo</span>
+            <p className="sidebar-hint">PDF, PNG, JPG — máx. {MAX_FILE_MB} MB</p>
+            <label className="file-drop" htmlFor="file-input">
+              {selectedFile ? (
+                <span className="file-selected">
+                  📎 {selectedFile.name}
+                  <button type="button" className="file-remove" onClick={(e) => { e.preventDefault(); removeFile(); }}>×</button>
+                </span>
+              ) : (
+                <span>Haz clic o arrastra un archivo</span>
+              )}
+            </label>
+            <input id="file-input" ref={fileInputRef} type="file" accept={ACCEPTED_TYPES} onChange={handleFileChange} className="file-input-hidden" />
+            {fileError && <p className="error-box">{fileError}</p>}
+            {fileSuccess && <p className="success-box">{fileSuccess}</p>}
+            <button type="button" className="btn-primary" style={{ width: '100%' }} disabled={!selectedFile} onClick={handleFileUpload}>
+              Subir archivo
+            </button>
+          </div>
+        ) : (
+          <>
+            <div>
+              <h3>Disponibles</h3>
+              <p>Chat básico, respuestas rápidas y guía inicial.</p>
+            </div>
+            <div className="locked-card"><h4>Historial</h4><p>Inicia sesión para guardar conversaciones.</p></div>
+            <div className="locked-card"><h4>Subida de archivos</h4><p>Inicia sesión para adjuntar documentos.</p></div>
+            <div className="locked-card"><h4>Métricas</h4><p>Inicia sesión para ver tu actividad.</p></div>
+            <Link to="/register" className="btn-primary" style={{ textAlign: 'center' }}>Crear cuenta gratis</Link>
+          </>
+        )}
+      </aside>
+
     </div>
   );
 }
