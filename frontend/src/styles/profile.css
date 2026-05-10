@@ -14,7 +14,8 @@
   overflow: hidden;
 }
 
-/* ── Sidebar ───────────────────────────────── */
+/* ========== SIDEBAR ========== */
+
 .profile-sidebar {
   background: var(--card);
   border: 1px solid var(--border);
@@ -28,7 +29,8 @@
   gap: var(--space-5);
 }
 
-/* ── Avatar preview ─────────────────────────── */
+/* ========== AVATAR PREVIEW ========== */
+
 .profile-avatar-wrapper {
   text-align: center;
   padding-bottom: var(--space-5);
@@ -77,7 +79,8 @@
   font-family: var(--font-body);
 }
 
-/* ── Color swatches ──────────────────────────── */
+/* ========== COLOR SWATCHES ========== */
+
 .profile-color-picker {
   display: flex;
   flex-direction: column;
@@ -91,6 +94,7 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-family: var(--font-body);
+  margin: 0;
 }
 
 .profile-color-swatches {
@@ -108,10 +112,11 @@
   transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
   outline: none;
   flex-shrink: 0;
+  padding: 0;
 }
 
 .color-swatch:hover {
-  transform: scale(1.15);
+  transform: scale(1.18);
   box-shadow: var(--shadow-md);
 }
 
@@ -121,7 +126,8 @@
   transform: scale(1.1);
 }
 
-/* ── Contenido principal ───────────────────────── */
+/* ========== CONTENIDO PRINCIPAL ========== */
+
 .profile-content {
   overflow-y: auto;
   display: flex;
@@ -140,16 +146,17 @@
 }
 
 .profile-section h2 {
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
   font-weight: 700;
   color: var(--text);
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   margin-bottom: var(--space-2);
 }
 
-/* Reutiliza .form-group, .settings-form, .btn-save de settings.css */
+/* Reutiliza .settings-form, .form-group, .btn-save, select de settings.css */
 
-/* Badge "Personalizado" */
+/* ========== BADGE PERSONALIZADO ========== */
+
 .profile-badge {
   display: inline-flex;
   align-items: center;
@@ -165,7 +172,8 @@
   vertical-align: middle;
 }
 
-/* ── Responsive ──────────────────────────────── */
+/* ========== RESPONSIVE ========== */
+
 @media (max-width: 1024px) {
   .profile-layout {
     grid-template-columns: 230px 1fr;
@@ -180,9 +188,7 @@
     overflow: visible;
     padding: var(--space-4);
   }
-  .profile-sidebar {
-    height: auto;
-  }
+  .profile-sidebar { height: auto; }
   .profile-content { overflow: visible; }
 }
 
