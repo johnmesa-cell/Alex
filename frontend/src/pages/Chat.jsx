@@ -9,9 +9,13 @@ const QUICK_REPLIES = [
   { label: 'RCP básica', text: 'Dame los pasos básicos de RCP para adulto.' },
 ];
 
-function Chat() {
-  const { isAuthenticated } = useAuth();
+const ACCEPTED_TYPES = '.pdf,.png,.jpg,.jpeg';
+const MAX_FILE_MB = 5;
 
+function Chat() {
+  const { isAuthenticated, user } = useAuth();
+
+  // Chat state
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState([
     {
@@ -23,28 +27,43 @@ function Chat() {
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Voz
   const [isListening, setIsListening] = useState(false);
-  const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
+
+  // Archivos (solo autenticado)
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileError, setFileError] = useState('');
+  const [fileSuccess, setFileSuccess] = useState('');
+  const fileInputRef = useRef(null);
+
+  // Panel lateral: tab activo
+  const [sideTab, setSideTab] = useState('historial'); // 'historial' | 'archivos' | 'metricas'
+
+  // Historial simulado (se reemplazará cuando exista endpoint)
+  const historial = [
+    { id: 1, fecha: 'Hoy, 10:32', resumen: 'Control de sangrado en herida superficial' },
+    { id: 2, fecha: 'Ayer, 15:14', resumen: 'Pasos de RCP para adulto' },
+    { id: 3, fecha: '08 may, 09:05', resumen: 'Quemadura leve con agua caliente' },
+  ];
+
+  const messagesEndRef = useRef(null);
 
   const speechEnabled = useMemo(
     () => typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window),
     []
   );
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
   const sendPrompt = async (inputPrompt) => {
     const cleanPrompt = inputPrompt.trim();
     if (!cleanPrompt || loading) return;
-
     setError('');
     setLoading(true);
     setMessages((prev) => [...prev, { role: 'user', text: cleanPrompt }]);
     setPrompt('');
-
     try {
       const { data } = await api.post('/api/ai/guidance', { prompt: cleanPrompt });
       const answer = data?.data?.respuesta || 'No se recibió respuesta válida del servidor.';
@@ -57,29 +76,55 @@ function Chat() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await sendPrompt(prompt);
-  };
+  const handleSubmit = async (e) => { e.preventDefault(); await sendPrompt(prompt); };
 
   const startSpeech = () => {
     if (!speechEnabled || isListening) return;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'es-CO';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognition.onstart = () => { setIsListening(true); setError(''); };
-    recognition.onresult = (e) => { setPrompt(e.results?.[0]?.[0]?.transcript || ''); };
-    recognition.onerror = () => { setError('No fue posible capturar audio. Verifica permisos del micrófono.'); };
-    recognition.onend = () => { setIsListening(false); };
-    recognitionRef.current = recognition;
-    recognition.start();
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = new SR();
+    rec.lang = 'es-CO'; rec.interimResults = false; rec.maxAlternatives = 1;
+    rec.onstart = () => { setIsListening(true); setError(''); };
+    rec.onresult = (e) => setPrompt(e.results?.[0]?.[0]?.transcript || '');
+    rec.onerror = () => setError('No fue posible capturar audio. Verifica permisos del micrófono.');
+    rec.onend = () => setIsListening(false);
+    recognitionRef.current = rec;
+    rec.start();
   };
 
-  const stopSpeech = () => {
-    recognitionRef.current?.stop();
-    setIsListening(false);
+  const stopSpeech = () => { recognitionRef.current?.stop(); setIsListening(false); };
+
+  // Manejo de archivo
+  const handleFileChange = (e) => {
+    setFileError(''); setFileSuccess('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_FILE_MB * 1024 * 1024) {
+      setFileError(`El archivo supera el límite de ${MAX_FILE_MB} MB.`);
+      return;
+    }
+    setSelectedFile(file);
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+    setFileError(''); setFileSuccess('');
+    const formData = new FormData();
+    formData.append('archivo', selectedFile);
+    try {
+      await api.post('/api/files/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setFileSuccess(`"${selectedFile.name}" subido correctamente.`);
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err) {
+      setFileError(getApiError(err));
+    }
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null); setFileError(''); setFileSuccess('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -96,13 +141,13 @@ function Chat() {
       )}
 
       <div className="chat-layout">
-        {/* Panel principal de chat */}
+        {/* ── Panel principal de chat ── */}
         <section className="chat-panel">
           <div className="chat-head">
             <div>
               <h1>Chat IA</h1>
               <p className="chat-head__sub">
-                {isAuthenticated ? 'Consulta con historial y funciones completas.' : 'Consulta rápida sin cuenta registrada.'}
+                {isAuthenticated ? `Bienvenido, ${user?.nombre || 'Usuario'}. Sesión con funciones completas.` : 'Consulta rápida sin cuenta registrada.'}
               </p>
             </div>
             <span className="chip">{isAuthenticated ? 'Sesión activa' : 'Sesión temporal'}</span>
@@ -121,9 +166,7 @@ function Chat() {
                 <p className="message-role">ALEX</p>
                 <p>
                   Escribiendo respuesta
-                  <span className="typing-dots" aria-hidden="true">
-                    <span /><span /><span />
-                  </span>
+                  <span className="typing-dots" aria-hidden="true"><span /><span /><span /></span>
                 </p>
               </article>
             )}
@@ -133,12 +176,7 @@ function Chat() {
           {/* Respuestas rápidas */}
           <div className="quick-replies" aria-label="Respuestas rápidas">
             {QUICK_REPLIES.map((qr) => (
-              <button
-                key={qr.label}
-                type="button"
-                className="quick-reply"
-                onClick={() => setPrompt(qr.text)}
-              >
+              <button key={qr.label} type="button" className="quick-reply" onClick={() => setPrompt(qr.text)}>
                 {qr.label}
               </button>
             ))}
@@ -157,22 +195,16 @@ function Chat() {
             <div className="char-counter-row">
               <span className="char-counter">{prompt.length}/400</span>
             </div>
-
             {error && <p className="error-box">{error}</p>}
-
             <div className="chat-actions">
               <button type="submit" className="btn-primary" disabled={loading}>
                 {loading ? 'Enviando...' : (isAuthenticated ? 'Enviar' : 'Enviar en modo invitado')}
               </button>
               {speechEnabled && !isListening && (
-                <button type="button" className="btn-secondary" onClick={startSpeech}>
-                  Dictar por voz
-                </button>
+                <button type="button" className="btn-secondary" onClick={startSpeech}>Dictar por voz</button>
               )}
               {speechEnabled && isListening && (
-                <button type="button" className="btn-secondary" onClick={stopSpeech}>
-                  Detener dictado
-                </button>
+                <button type="button" className="btn-secondary" onClick={stopSpeech}>Detener dictado</button>
               )}
               {!isAuthenticated && (
                 <Link to="/login" className="btn-secondary">Desbloquear funciones</Link>
@@ -181,14 +213,109 @@ function Chat() {
           </form>
         </section>
 
-        {/* Panel lateral */}
+        {/* ── Panel lateral ── */}
         <aside className="chat-side">
           {isAuthenticated ? (
-            <div>
-              <h3>Funciones activas</h3>
-              <p>Historial guardado, carga de archivos y configuración disponibles.</p>
-            </div>
+            <>
+              {/* Tabs */}
+              <div className="side-tabs">
+                <button
+                  type="button"
+                  className={`side-tab${sideTab === 'historial' ? ' active' : ''}`}
+                  onClick={() => setSideTab('historial')}
+                >Historial</button>
+                <button
+                  type="button"
+                  className={`side-tab${sideTab === 'archivos' ? ' active' : ''}`}
+                  onClick={() => setSideTab('archivos')}
+                >Archivos</button>
+                <button
+                  type="button"
+                  className={`side-tab${sideTab === 'metricas' ? ' active' : ''}`}
+                  onClick={() => setSideTab('metricas')}
+                >Métricas</button>
+              </div>
+
+              {/* Tab: Historial */}
+              {sideTab === 'historial' && (
+                <div className="side-content">
+                  {historial.length === 0 ? (
+                    <p className="muted">Aún no tienes consultas guardadas.</p>
+                  ) : (
+                    <ul className="historial-list">
+                      {historial.map((h) => (
+                        <li key={h.id} className="historial-item">
+                          <span className="historial-fecha">{h.fecha}</span>
+                          <span className="historial-resumen">{h.resumen}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              {/* Tab: Archivos */}
+              {sideTab === 'archivos' && (
+                <div className="side-content">
+                  <p className="muted side-hint">Sube imágenes o PDFs para adjuntarlos a tu consulta (máx. {MAX_FILE_MB} MB).</p>
+                  <label className="file-drop" htmlFor="file-input">
+                    {selectedFile ? (
+                      <span className="file-selected">
+                        📎 {selectedFile.name}
+                        <button type="button" className="file-remove" onClick={(e) => { e.preventDefault(); removeFile(); }}>×</button>
+                      </span>
+                    ) : (
+                      <span>Haz clic o arrastra un archivo aquí</span>
+                    )}
+                  </label>
+                  <input
+                    id="file-input"
+                    ref={fileInputRef}
+                    type="file"
+                    accept={ACCEPTED_TYPES}
+                    onChange={handleFileChange}
+                    className="file-input-hidden"
+                  />
+                  {fileError && <p className="error-box">{fileError}</p>}
+                  {fileSuccess && <p className="success-box">{fileSuccess}</p>}
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={!selectedFile}
+                    onClick={handleFileUpload}
+                  >
+                    Subir archivo
+                  </button>
+                </div>
+              )}
+
+              {/* Tab: Métricas */}
+              {sideTab === 'metricas' && (
+                <div className="side-content">
+                  <ul className="metrics-list">
+                    <li className="metric-item">
+                      <span className="metric-label">Consultas totales</span>
+                      <span className="metric-value">{messages.filter(m => m.role === 'user').length}</span>
+                    </li>
+                    <li className="metric-item">
+                      <span className="metric-label">Sesión actual</span>
+                      <span className="metric-value">{messages.length} mensajes</span>
+                    </li>
+                    <li className="metric-item">
+                      <span className="metric-label">Usuario</span>
+                      <span className="metric-value">{user?.nombre || '—'}</span>
+                    </li>
+                    <li className="metric-item">
+                      <span className="metric-label">Historial guardado</span>
+                      <span className="metric-value">{historial.length} consultas</span>
+                    </li>
+                  </ul>
+                  <p className="muted side-hint">Las métricas detalladas estarán disponibles próximamente.</p>
+                </div>
+              )}
+            </>
           ) : (
+            /* Modo invitado — sin cambios */
             <>
               <div>
                 <h3>Disponibles</h3>
