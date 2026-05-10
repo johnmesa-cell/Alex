@@ -237,6 +237,7 @@
   text-decoration: none;
   transition: color var(--transition);
   line-height: 1;
+  white-space: nowrap;
 }
 
 .brand:hover {
@@ -282,6 +283,7 @@
   color: var(--text-faint);
   cursor: default;
   pointer-events: none;
+  white-space: nowrap;
 }
 
 /* ── Sesión derecha ── */
@@ -292,7 +294,7 @@
   justify-self: end;
 }
 
-/* Botones proporcionales dentro de la navbar */
+/* Botones proporcionales dentro de la navbar — una sola línea */
 .btn-nav {
   padding: var(--space-2) var(--space-4) !important;
   font-size: var(--text-xs) !important;
@@ -301,7 +303,10 @@
   line-height: 1;
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   border-radius: var(--radius-full) !important;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .session-pill {
