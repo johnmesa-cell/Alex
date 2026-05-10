@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import api from '../services/api.js';
 import logoAlex from '../assets/logo-alex.png';
 
 const AVATAR_COLORS = [
@@ -25,6 +26,22 @@ function getAvatarColor(nombre) {
   return AVATAR_COLORS[code % AVATAR_COLORS.length];
 }
 
+function formatFecha(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const ahora = new Date();
+  const diffH = (ahora - d) / 3600000;
+  if (diffH < 24 && d.getDate() === ahora.getDate()) {
+    return 'Hoy, ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+  }
+  const ayer = new Date(ahora);
+  ayer.setDate(ayer.getDate() - 1);
+  if (d.getDate() === ayer.getDate() && diffH < 48) {
+    return 'Ayer, ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+  }
+  return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 /* Ilustración SVG decorativa para la vista pública */
 function HeroIllustration() {
   return (
@@ -35,58 +52,34 @@ function HeroIllustration() {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      {/* Fondo sutil */}
       <rect width="320" height="220" rx="20" fill="#f0fdfa"/>
-      {/* Pantalla de teléfono */}
       <rect x="100" y="24" width="120" height="172" rx="16" fill="#fff" stroke="#99f6e4" strokeWidth="2"/>
       <rect x="108" y="40" width="104" height="10" rx="5" fill="#ccfbf1"/>
-      {/* Burbuja asistente */}
-      <rect x="108" y="58" width="80" height="22" rx="8" fill="#0f766e"/>
       <rect x="108" y="58" width="80" height="22" rx="8" fill="#0f766e"/>
       <rect x="111" y="63" width="52" height="6" rx="3" fill="#ccfbf1" opacity="0.8"/>
       <rect x="111" y="72" width="38" height="4" rx="2" fill="#ccfbf1" opacity="0.5"/>
-      {/* Burbuja usuario */}
       <rect x="132" y="88" width="76" height="22" rx="8" fill="#e0f2fe"/>
       <rect x="136" y="93" width="48" height="6" rx="3" fill="#0369a1" opacity="0.5"/>
       <rect x="136" y="102" width="32" height="4" rx="2" fill="#0369a1" opacity="0.3"/>
-      {/* Burbuja asistente 2 */}
       <rect x="108" y="118" width="88" height="30" rx="8" fill="#0f766e" opacity="0.85"/>
       <rect x="112" y="123" width="60" height="5" rx="2.5" fill="#ccfbf1" opacity="0.8"/>
       <rect x="112" y="131" width="44" height="4" rx="2" fill="#ccfbf1" opacity="0.5"/>
       <rect x="112" y="138" width="52" height="4" rx="2" fill="#ccfbf1" opacity="0.4"/>
-      {/* Barra input */}
       <rect x="108" y="162" width="104" height="18" rx="9" fill="#f0fdfa" stroke="#99f6e4" strokeWidth="1.5"/>
       <rect x="116" y="167" width="60" height="6" rx="3" fill="#99f6e4" opacity="0.7"/>
-      {/* Botón enviar */}
       <circle cx="200" cy="171" r="7" fill="#0f766e"/>
       <path d="M197 171l3-2.5v5L197 171z" fill="#fff"/>
-      {/* Cruz de primeros auxilios */}
       <circle cx="56" cy="70" r="26" fill="#fff" stroke="#0f766e" strokeWidth="2"/>
       <rect x="50" y="60" width="12" height="20" rx="3" fill="#0f766e"/>
       <rect x="46" y="64" width="20" height="12" rx="3" fill="#0f766e"/>
-      {/* Pulso cardiaco */}
       <polyline points="20,150 34,150 40,134 48,166 56,142 62,150 76,150" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      {/* Estrella / alerta */}
       <circle cx="264" cy="80" r="20" fill="#fef9c3" stroke="#ca8a04" strokeWidth="1.5"/>
       <text x="264" y="86" textAnchor="middle" fontSize="18" fill="#ca8a04">!</text>
-      {/* Punto decorativo */}
       <circle cx="264" cy="150" r="10" fill="#ccfbf1" stroke="#0f766e" strokeWidth="1.5"/>
       <path d="M260 150h8M264 146v8" stroke="#0f766e" strokeWidth="2" strokeLinecap="round"/>
     </svg>
   );
 }
-
-/* Datos mock de ultima consulta — en producción vendrían del historial real */
-const ULTIMA_CONSULTA = {
-  resumen: 'Control de sangrado en herida superficial',
-  fecha: 'Hoy, 10:32',
-};
-
-const STATS = [
-  { label: 'Consultas realizadas', value: '12' },
-  { label: 'Archivos subidos', value: '3' },
-  { label: 'Último acceso', value: 'Hoy' },
-];
 
 const ACCIONES = [
   { label: 'Nueva consulta', desc: 'Abre el chat y empieza a describir la situación.', icon: '💬', to: '/chat' },
@@ -100,6 +93,33 @@ function Home() {
   const initials = getInitials(user?.nombre);
   const avatarColor = getAvatarColor(user?.nombre);
 
+  // ── Datos reales del resumen (solo cuando está autenticado) ──
+  const [resumen, setResumen] = useState(null);
+  const [resumenLoading, setResumenLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    setResumenLoading(true);
+    api.get('/api/consultas/resumen')
+      .then(({ data }) => setResumen(data?.data ?? null))
+      .catch(() => setResumen(null))
+      .finally(() => setResumenLoading(false));
+  }, [isAuthenticated]);
+
+  const stats = resumen
+    ? [
+        { label: 'Consultas realizadas', value: String(resumen.totalConsultas ?? 0) },
+        { label: 'Archivos subidos',     value: String(resumen.archivosSubidos ?? 0) },
+        { label: 'Último acceso',        value: user?.ultimo_login ? formatFecha(user.ultimo_login) : 'Hoy' },
+      ]
+    : [
+        { label: 'Consultas realizadas', value: resumenLoading ? '…' : '0' },
+        { label: 'Archivos subidos',     value: resumenLoading ? '…' : '0' },
+        { label: 'Último acceso',        value: 'Hoy' },
+      ];
+
+  const ultimaConsulta = resumen?.ultimaConsulta ?? null;
+
   return (
     <div className="public-page">
 
@@ -107,7 +127,6 @@ function Home() {
       <section className="landing-hero">
         <div className="landing-hero__left">
           {isAuthenticated ? (
-            /* Vista autenticada: columna izquierda con acciones + stats */
             <div className="landing-auth-left">
               {/* Acciones rápidas */}
               <div className="landing-section-label">Acciones rápidas</div>
@@ -126,17 +145,25 @@ function Home() {
               {/* Última consulta */}
               <div className="landing-section-label" style={{ marginTop: 'var(--space-4)' }}>Última consulta</div>
               <div className="landing-last-chat fade-up">
-                <div className="landing-last-chat__meta">
-                  <span className="landing-last-chat__date">{ULTIMA_CONSULTA.fecha}</span>
-                </div>
-                <p className="landing-last-chat__resumen">{ULTIMA_CONSULTA.resumen}</p>
-                <Link to="/chat" className="btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-2) var(--space-4)' }}>Continuar →</Link>
+                {resumenLoading ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Cargando…</p>
+                ) : ultimaConsulta ? (
+                  <>
+                    <div className="landing-last-chat__meta">
+                      <span className="landing-last-chat__date">{formatFecha(ultimaConsulta.fecha_creacion)}</span>
+                    </div>
+                    <p className="landing-last-chat__resumen">{ultimaConsulta.asunto}</p>
+                    <Link to="/chat" className="btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-2) var(--space-4)' }}>Continuar →</Link>
+                  </>
+                ) : (
+                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Aún no tienes consultas. <Link to="/chat">¡Inicia una ahora!</Link></p>
+                )}
               </div>
 
               {/* Estadísticas */}
               <div className="landing-section-label" style={{ marginTop: 'var(--space-4)' }}>Resumen de actividad</div>
               <div className="landing-stats">
-                {STATS.map((s) => (
+                {stats.map((s) => (
                   <div key={s.label} className="landing-stat-card fade-up">
                     <span className="landing-stat-value">{s.value}</span>
                     <span className="landing-stat-label">{s.label}</span>
@@ -177,7 +204,6 @@ function Home() {
         <div className="landing-hero__right slide-in">
           <div className="landing-hero-card">
             {isAuthenticated ? (
-              /* Avatar grande con iniciales */
               <div className="landing-avatar-lg" style={{ background: avatarColor }}>
                 {initials}
               </div>
@@ -203,9 +229,7 @@ function Home() {
                   <span className="landing-badge">Dictado por voz</span>
                   <span className="landing-badge landing-badge--active">✓ Sesión activa</span>
                 </div>
-                {/* CTA directo en el hero */}
                 <Link to="/chat" className="btn-primary" style={{ width: '100%', textAlign: 'center' }}>Ir al chat →</Link>
-                {/* Disclaimer médico chip */}
                 <div className="landing-disclaimer">
                   <span className="landing-disclaimer-icon">🛡️</span>
                   ALEX orienta primeros pasos y no reemplaza atención médica profesional.
@@ -225,14 +249,11 @@ function Home() {
                   <span className="landing-badge">Dictado por voz</span>
                   <span className="landing-badge">Acceso seguro</span>
                 </div>
-                {/* CTA duplicado en el hero */}
                 <div className="landing-hero-cta">
                   <Link to="/register" className="btn-primary">Crear cuenta gratis</Link>
                   <Link to="/chat" className="btn-secondary">Probar como invitado</Link>
                 </div>
-                {/* Ilustración decorativa */}
                 <HeroIllustration />
-                {/* Disclaimer */}
                 <div className="landing-disclaimer">
                   <span className="landing-disclaimer-icon">🛡️</span>
                   ALEX orienta primeros pasos y no reemplaza atención médica profesional.

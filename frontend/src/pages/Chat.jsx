@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import api, { getApiError } from '../services/api.js';
@@ -12,12 +12,22 @@ const QUICK_REPLIES = [
 const ACCEPTED_TYPES = '.pdf,.png,.jpg,.jpeg';
 const MAX_FILE_MB = 5;
 
-const MOCK_HISTORIAL = [
-  { id: 1, fecha: 'Hoy, 10:32', resumen: 'Control de sangrado en herida superficial' },
-  { id: 2, fecha: 'Ayer, 15:14', resumen: 'Pasos de RCP para adulto' },
-  { id: 3, fecha: '08 may', resumen: 'Quemadura leve con agua caliente' },
-  { id: 4, fecha: '07 may', resumen: 'Atragantamiento en niños' },
-];
+function formatFecha(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const ahora = new Date();
+  const diffMs = ahora - d;
+  const diffH = diffMs / 3600000;
+  if (diffH < 24 && d.getDate() === ahora.getDate()) {
+    return 'Hoy, ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+  }
+  const ayer = new Date(ahora);
+  ayer.setDate(ayer.getDate() - 1);
+  if (d.getDate() === ayer.getDate() && diffH < 48) {
+    return 'Ayer, ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+  }
+  return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+}
 
 const IconHistory = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -63,6 +73,30 @@ function Chat() {
   const [fileSuccess, setFileSuccess] = useState('');
   const fileInputRef = useRef(null);
 
+  // ── Historial real desde la BD ──
+  const [historial, setHistorial] = useState([]);
+  const [historialLoading, setHistorialLoading] = useState(false);
+  const [historialError, setHistorialError] = useState('');
+
+  const fetchHistorial = async () => {
+    if (!isAuthenticated) return;
+    setHistorialLoading(true);
+    setHistorialError('');
+    try {
+      const { data } = await api.get('/api/consultas');
+      setHistorial(data?.data ?? []);
+    } catch (err) {
+      setHistorialError('No se pudo cargar el historial.');
+    } finally {
+      setHistorialLoading(false);
+    }
+  };
+
+  // Carga inicial del historial
+  useEffect(() => {
+    if (isAuthenticated) fetchHistorial();
+  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const speechEnabled = useMemo(
     () => typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window),
     []
@@ -81,6 +115,8 @@ function Chat() {
       const { data } = await api.post('/api/ai/guidance', { prompt: clean });
       const answer = data?.data?.respuesta || 'No se recibió respuesta válida del servidor.';
       setMessages((prev) => [...prev, { role: 'assistant', text: answer }]);
+      // Refresca historial después de enviar (la BD ya fue actualizada por el backend)
+      if (isAuthenticated) fetchHistorial();
     } catch (err) {
       setError(getApiError(err));
     } finally {
@@ -144,7 +180,6 @@ function Chat() {
       {isAuthenticated && (
         <>
           <nav className="chat-rail">
-            {/* Iconos top */}
             <div className="rail-top">
               <button
                 type="button"
@@ -165,7 +200,6 @@ function Chat() {
                 <IconMetrics />
               </button>
             </div>
-            {/* Icono configuración abajo */}
             <div className="rail-bottom">
               <button type="button" className="rail-btn" title="Configuración" aria-label="Configuración">
                 <IconSettings />
@@ -173,7 +207,6 @@ function Chat() {
             </div>
           </nav>
 
-          {/* Drawer que se despliega sobre el contenido, pegado al rail */}
           {activePanel && (
             <div className="rail-drawer" role="region" aria-label={activePanel}>
               <div className="rail-drawer__head">
@@ -185,15 +218,34 @@ function Chat() {
 
               {activePanel === 'historial' && (
                 <>
-                  <button type="button" className="sidebar-new-btn">+ Nueva consulta</button>
-                  <ul className="historial-list">
-                    {MOCK_HISTORIAL.map((h) => (
-                      <li key={h.id} className="historial-item">
-                        <span className="historial-fecha">{h.fecha}</span>
-                        <span className="historial-resumen">{h.resumen}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <button
+                    type="button"
+                    className="sidebar-new-btn"
+                    onClick={() => {
+                      setMessages([{ role: 'assistant', text: 'Hola, soy ALEX. Describe la situación y te daré orientación inicial de primeros auxilios.' }]);
+                      setActivePanel(null);
+                    }}
+                  >
+                    + Nueva consulta
+                  </button>
+
+                  {historialLoading && <p style={{ padding: '12px', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Cargando historial…</p>}
+                  {historialError && <p style={{ padding: '12px', color: 'var(--color-error)', fontSize: 'var(--text-sm)' }}>{historialError}</p>}
+
+                  {!historialLoading && !historialError && historial.length === 0 && (
+                    <p style={{ padding: '12px', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Aún no tienes consultas guardadas.</p>
+                  )}
+
+                  {!historialLoading && historial.length > 0 && (
+                    <ul className="historial-list">
+                      {historial.map((h) => (
+                        <li key={h.id_consulta} className="historial-item">
+                          <span className="historial-fecha">{formatFecha(h.fecha_creacion)}</span>
+                          <span className="historial-resumen">{h.asunto}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </>
               )}
 
@@ -209,7 +261,7 @@ function Chat() {
                   </li>
                   <li className="metric-item">
                     <span className="metric-label">Historial guardado</span>
-                    <span className="metric-value">{MOCK_HISTORIAL.length}</span>
+                    <span className="metric-value">{historial.length}</span>
                   </li>
                   <li className="metric-item">
                     <span className="metric-label">Usuario</span>
@@ -224,7 +276,6 @@ function Chat() {
 
       {/* ======== CONTENIDO CENTRAL ======== */}
       <div className="chat-content">
-        {/* Banner invitado */}
         {!isAuthenticated && (
           <div className="guest-alert" role="alert">
             <strong>Estás en modo invitado.</strong>{' '}
