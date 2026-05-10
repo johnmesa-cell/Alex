@@ -12,13 +12,27 @@ const QUICK_REPLIES = [
 const ACCEPTED_TYPES = '.pdf,.png,.jpg,.jpeg';
 const MAX_FILE_MB = 5;
 
-// Historial simulado — se reemplazará con endpoint cuando exista
 const MOCK_HISTORIAL = [
   { id: 1, fecha: 'Hoy, 10:32', resumen: 'Control de sangrado en herida superficial' },
   { id: 2, fecha: 'Ayer, 15:14', resumen: 'Pasos de RCP para adulto' },
   { id: 3, fecha: '08 may', resumen: 'Quemadura leve con agua caliente' },
   { id: 4, fecha: '07 may', resumen: 'Atragantamiento en niños' },
 ];
+
+// iconos SVG inline simples
+const IconHistory = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+const IconMetrics = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10"/>
+    <line x1="12" y1="20" x2="12" y2="4"/>
+    <line x1="6" y1="20" x2="6" y2="14"/>
+  </svg>
+);
 
 function Chat() {
   const { isAuthenticated, user } = useAuth();
@@ -37,11 +51,16 @@ function Chat() {
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
 
+  // Sidebar izquierdo colapsable
+  // activePanel: null | 'historial' | 'metricas'
+  const [activePanel, setActivePanel] = useState(null);
+  const togglePanel = (panel) => setActivePanel((prev) => (prev === panel ? null : panel));
+
   // Voz
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
 
-  // Archivos
+  // Archivos (panel derecho)
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileError, setFileError] = useState('');
   const [fileSuccess, setFileSuccess] = useState('');
@@ -95,7 +114,7 @@ function Chat() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > MAX_FILE_MB * 1024 * 1024) {
-      setFileError(`El archivo supera el límite de ${MAX_FILE_MB} MB.`);
+      setFileError(`El archivo supera el límite de ${MAX_FILE_MB} MB.`);
       return;
     }
     setSelectedFile(file);
@@ -108,7 +127,7 @@ function Chat() {
     formData.append('archivo', selectedFile);
     try {
       await api.post('/api/files/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      setFileSuccess(`«v${selectedFile.name}» subido correctamente.`);
+      setFileSuccess(`«${selectedFile.name}» subido correctamente.`);
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
@@ -135,82 +154,86 @@ function Chat() {
 
       <div className={`chat-layout${isAuthenticated ? ' chat-layout--auth' : ''}`}>
 
-        {/* ──────── SIDEBAR IZQUIERDO (solo autenticado) ──────── */}
+        {/* ======== SIDEBAR IZQUIERDO COLAPSABLE (solo autenticado) ======== */}
         {isAuthenticated && (
-          <aside className="chat-sidebar">
-            {/* Historial */}
-            <div className="sidebar-section">
-              <div className="sidebar-section__head">
-                <span className="sidebar-section__title">Historial</span>
-                <button type="button" className="sidebar-new-btn">+ Nuevo</button>
-              </div>
-              <ul className="historial-list">
-                {MOCK_HISTORIAL.map((h) => (
-                  <li key={h.id} className="historial-item">
-                    <span className="historial-fecha">{h.fecha}</span>
-                    <span className="historial-resumen">{h.resumen}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Separador */}
-            <div className="sidebar-divider" />
-
-            {/* Subida de archivos */}
-            <div className="sidebar-section">
-              <span className="sidebar-section__title">Adjuntar archivo</span>
-              <p className="sidebar-hint">PDF, PNG, JPG — máx. {MAX_FILE_MB} MB</p>
-              <label className="file-drop" htmlFor="file-input">
-                {selectedFile ? (
-                  <span className="file-selected">
-                    📎 {selectedFile.name}
-                    <button
-                      type="button"
-                      className="file-remove"
-                      onClick={(e) => { e.preventDefault(); removeFile(); }}
-                    >×</button>
-                  </span>
-                ) : (
-                  <span>Haz clic o arrastra un archivo</span>
-                )}
-              </label>
-              <input
-                id="file-input"
-                ref={fileInputRef}
-                type="file"
-                accept={ACCEPTED_TYPES}
-                onChange={handleFileChange}
-                className="file-input-hidden"
-              />
-              {fileError && <p className="error-box">{fileError}</p>}
-              {fileSuccess && <p className="success-box">{fileSuccess}</p>}
+          <div className="chat-rail">
+            {/* Iconos siempre visibles */}
+            <div className="rail-icons">
               <button
                 type="button"
-                className="btn-primary sidebar-upload-btn"
-                disabled={!selectedFile}
-                onClick={handleFileUpload}
+                className={`rail-btn${activePanel === 'historial' ? ' rail-btn--active' : ''}`}
+                onClick={() => togglePanel('historial')}
+                title="Historial"
+                aria-label="Abrir historial"
               >
-                Subir archivo
+                <IconHistory />
+              </button>
+              <button
+                type="button"
+                className={`rail-btn${activePanel === 'metricas' ? ' rail-btn--active' : ''}`}
+                onClick={() => togglePanel('metricas')}
+                title="Métricas"
+                aria-label="Abrir métricas"
+              >
+                <IconMetrics />
               </button>
             </div>
 
-            {/* Métricas pequeñas */}
-            <div className="sidebar-divider" />
-            <div className="sidebar-metrics">
-              <div className="sidebar-metric">
-                <span className="sidebar-metric__label">Sesión</span>
-                <span className="sidebar-metric__value">{messages.filter(m => m.role === 'user').length} consultas</span>
+            {/* Drawer que se despliega al lado del rail */}
+            {activePanel && (
+              <div className="rail-drawer" role="region" aria-label={activePanel}>
+                <div className="rail-drawer__head">
+                  <span className="rail-drawer__title">
+                    {activePanel === 'historial' ? 'Historial' : 'Métricas'}
+                  </span>
+                  <button
+                    type="button"
+                    className="rail-drawer__close"
+                    onClick={() => setActivePanel(null)}
+                    aria-label="Cerrar panel"
+                  >×</button>
+                </div>
+
+                {activePanel === 'historial' && (
+                  <>
+                    <button type="button" className="sidebar-new-btn">+ Nueva consulta</button>
+                    <ul className="historial-list">
+                      {MOCK_HISTORIAL.map((h) => (
+                        <li key={h.id} className="historial-item">
+                          <span className="historial-fecha">{h.fecha}</span>
+                          <span className="historial-resumen">{h.resumen}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+
+                {activePanel === 'metricas' && (
+                  <ul className="metrics-list">
+                    <li className="metric-item">
+                      <span className="metric-label">Consultas sesión</span>
+                      <span className="metric-value">{messages.filter(m => m.role === 'user').length}</span>
+                    </li>
+                    <li className="metric-item">
+                      <span className="metric-label">Mensajes totales</span>
+                      <span className="metric-value">{messages.length}</span>
+                    </li>
+                    <li className="metric-item">
+                      <span className="metric-label">Historial guardado</span>
+                      <span className="metric-value">{MOCK_HISTORIAL.length}</span>
+                    </li>
+                    <li className="metric-item">
+                      <span className="metric-label">Usuario</span>
+                      <span className="metric-value">{user?.nombre || '—'}</span>
+                    </li>
+                  </ul>
+                )}
               </div>
-              <div className="sidebar-metric">
-                <span className="sidebar-metric__label">Guardadas</span>
-                <span className="sidebar-metric__value">{MOCK_HISTORIAL.length}</span>
-              </div>
-            </div>
-          </aside>
+            )}
+          </div>
         )}
 
-        {/* ──────── PANEL PRINCIPAL ──────── */}
+        {/* ======== PANEL PRINCIPAL ======== */}
         <section className="chat-panel">
           <div className="chat-head">
             <div>
@@ -224,7 +247,6 @@ function Chat() {
             <span className="chip">{isAuthenticated ? 'Sesión activa' : 'Sesión temporal'}</span>
           </div>
 
-          {/* Mensajes */}
           <div className="messages" id="chat-messages">
             {messages.map((msg, i) => (
               <article key={i} className={`message message-${msg.role}`}>
@@ -235,16 +257,12 @@ function Chat() {
             {loading && (
               <article className="message message-assistant typing">
                 <p className="message-role">ALEX</p>
-                <p>
-                  Escribiendo respuesta
-                  <span className="typing-dots" aria-hidden="true"><span /><span /><span /></span>
-                </p>
+                <p>Escribiendo respuesta<span className="typing-dots" aria-hidden="true"><span /><span /><span /></span></p>
               </article>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Respuestas rápidas */}
           <div className="quick-replies" aria-label="Respuestas rápidas">
             {QUICK_REPLIES.map((qr) => (
               <button key={qr.label} type="button" className="quick-reply" onClick={() => setPrompt(qr.text)}>
@@ -253,59 +271,63 @@ function Chat() {
             ))}
           </div>
 
-          {/* Formulario */}
           <form onSubmit={handleSubmit} className="chat-form">
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPrompt(prompt); } }}
               placeholder="Escribe tu consulta de primeros auxilios..."
-              rows={3}
-              maxLength={400}
+              rows={3} maxLength={400}
             />
-            <div className="char-counter-row">
-              <span className="char-counter">{prompt.length}/400</span>
-            </div>
+            <div className="char-counter-row"><span className="char-counter">{prompt.length}/400</span></div>
             {error && <p className="error-box">{error}</p>}
             <div className="chat-actions">
               <button type="submit" className="btn-primary" disabled={loading}>
                 {loading ? 'Enviando...' : (isAuthenticated ? 'Enviar' : 'Enviar en modo invitado')}
               </button>
-              {speechEnabled && !isListening && (
-                <button type="button" className="btn-secondary" onClick={startSpeech}>Dictar por voz</button>
-              )}
-              {speechEnabled && isListening && (
-                <button type="button" className="btn-secondary" onClick={stopSpeech}>Detener dictado</button>
-              )}
-              {!isAuthenticated && (
-                <Link to="/login" className="btn-secondary">Desbloquear funciones</Link>
-              )}
+              {speechEnabled && !isListening && <button type="button" className="btn-secondary" onClick={startSpeech}>Dictar por voz</button>}
+              {speechEnabled && isListening && <button type="button" className="btn-secondary" onClick={stopSpeech}>Detener dictado</button>}
+              {!isAuthenticated && <Link to="/login" className="btn-secondary">Desbloquear funciones</Link>}
             </div>
           </form>
         </section>
 
-        {/* ──────── PANEL DERECHO (invitado) ──────── */}
-        {!isAuthenticated && (
-          <aside className="chat-side">
-            <div>
-              <h3>Disponibles</h3>
-              <p>Chat básico, respuestas rápidas y guía inicial de emergencia.</p>
+        {/* ======== PANEL DERECHO: archivos (autenticado) o bloqueados (invitado) ======== */}
+        <aside className="chat-side">
+          {isAuthenticated ? (
+            <div className="side-content">
+              <span className="sidebar-section__title">Adjuntar archivo</span>
+              <p className="sidebar-hint">PDF, PNG, JPG — máx. {MAX_FILE_MB} MB</p>
+              <label className="file-drop" htmlFor="file-input">
+                {selectedFile ? (
+                  <span className="file-selected">
+                    📎 {selectedFile.name}
+                    <button type="button" className="file-remove" onClick={(e) => { e.preventDefault(); removeFile(); }}>×</button>
+                  </span>
+                ) : (
+                  <span>Haz clic o arrastra un archivo</span>
+                )}
+              </label>
+              <input id="file-input" ref={fileInputRef} type="file" accept={ACCEPTED_TYPES} onChange={handleFileChange} className="file-input-hidden" />
+              {fileError && <p className="error-box">{fileError}</p>}
+              {fileSuccess && <p className="success-box">{fileSuccess}</p>}
+              <button type="button" className="btn-primary" style={{ width: '100%' }} disabled={!selectedFile} onClick={handleFileUpload}>
+                Subir archivo
+              </button>
             </div>
-            <div className="locked-card">
-              <h4>Historial de chats</h4>
-              <p>Bloqueado en invitado. Inicia sesión para guardar conversaciones.</p>
-            </div>
-            <div className="locked-card">
-              <h4>Subida de archivos</h4>
-              <p>Bloqueado en invitado. Inicia sesión para adjuntar documentos.</p>
-            </div>
-            <div className="locked-card">
-              <h4>Métricas y seguimiento</h4>
-              <p>Bloqueado en invitado. Inicia sesión para ver tu actividad.</p>
-            </div>
-            <Link to="/register" className="btn-primary" style={{ textAlign: 'center' }}>Crear cuenta gratis</Link>
-          </aside>
-        )}
+          ) : (
+            <>
+              <div>
+                <h3>Disponibles</h3>
+                <p>Chat básico, respuestas rápidas y guía inicial.</p>
+              </div>
+              <div className="locked-card"><h4>Historial</h4><p>Inicia sesión para guardar conversaciones.</p></div>
+              <div className="locked-card"><h4>Subida de archivos</h4><p>Inicia sesión para adjuntar documentos.</p></div>
+              <div className="locked-card"><h4>Métricas</h4><p>Inicia sesión para ver tu actividad.</p></div>
+              <Link to="/register" className="btn-primary" style={{ textAlign: 'center' }}>Crear cuenta gratis</Link>
+            </>
+          )}
+        </aside>
 
       </div>
     </div>
