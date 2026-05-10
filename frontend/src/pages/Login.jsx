@@ -35,9 +35,24 @@ function Login() {
   };
 
   return (
-    <section className="form-page fade-up">
+    <section className="form-page">
+      <aside className="auth-sidebar">
+        <div className="auth-info-card">
+          <h3>¿Por qué ALEX?</h3>
+          <p>ALEX es una asistente de IA especializada en resolver dudas educativas y profesionales con precisión.</p>
+        </div>
+        <div className="auth-info-card">
+          <h3>Conversaciones Seguras</h3>
+          <p>Tus chats están protegidos con encriptación end-to-end. Tu privacidad es nuestra prioridad.</p>
+        </div>
+        <div className="auth-info-card">
+          <h3>Acceso Ilimitado</h3>
+          <p>Una vez dentro, tienes acceso a todas las funcionalidades premium de ALEX sin limitaciones.</p>
+        </div>
+      </aside>
+
       <div className="form-card">
-        <h1>Iniciar sesion</h1>
+        <h1>Iniciar sesión</h1>
         <p className="form-copy">Accede para abrir el chat protegido y consultar a la IA.</p>
 
         <form onSubmit={handleSubmit} className="form-grid">
@@ -54,13 +69,13 @@ function Login() {
           </label>
 
           <label>
-            Password
+            Contraseña
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="********"
+              placeholder="••••••••"
               required
             />
           </label>
@@ -73,7 +88,7 @@ function Login() {
         </form>
 
         <p className="helper-row">
-          No tienes cuenta? <Link to="/register">Registrate aqui</Link>
+          ¿No tienes cuenta? <Link to="/register">Regístrate aquí</Link>
         </p>
       </div>
     </section>

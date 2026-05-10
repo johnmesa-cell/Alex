@@ -1,0 +1,337 @@
+/* =============================================
+   Settings & Configuration Styles — Fase 3
+   Alineado al mockup: Mockup-07-Configuracion-Cuenta.html
+   ============================================= */
+
+/* ========== SETTINGS LAYOUT ========== */
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: 270px 1fr;
+  gap: var(--space-6);
+  min-height: calc(100dvh - var(--topbar-height));
+  padding: var(--space-6);
+  align-content: start;
+}
+
+.settings-menu {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4) var(--space-5);
+  box-shadow: var(--shadow-sm);
+  height: fit-content;
+  position: sticky;
+  top: calc(var(--topbar-height) + var(--space-6));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.settings-menu h3 {
+  font-size: var(--text-base);
+  color: var(--text);
+  margin-bottom: var(--space-2);
+  font-weight: 700;
+}
+
+.settings-menu p {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.settings-menu-note {
+  border-top: 1px solid var(--divider);
+  padding-top: var(--space-3);
+  margin-top: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* ========== MENU LINKS ========== */
+
+.settings-menu-link {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: left;
+}
+
+.settings-menu-link:hover {
+  background: rgba(15, 118, 110, 0.05);
+  color: var(--brand);
+  border-color: var(--border-strong);
+}
+
+.settings-menu-link.active {
+  background: var(--brand-light);
+  color: var(--brand);
+  border-color: var(--brand);
+}
+
+/* ========== SETTINGS CONTENT ========== */
+
+.settings-content {
+  display: grid;
+  gap: var(--space-6);
+  align-content: start;
+}
+
+.settings-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  display: none;
+  animation: fadeUp var(--transition) ease both;
+}
+
+.settings-section.active {
+  display: block;
+}
+
+.settings-section h2 {
+  font-size: var(--text-lg);
+  color: var(--text);
+  margin-bottom: var(--space-3);
+}
+
+.settings-section p {
+  color: var(--text-muted);
+  margin-bottom: var(--space-6);
+  line-height: 1.6;
+}
+
+/* ========== SETTINGS FORM ========== */
+
+.settings-form {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.form-group {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.form-group label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.form-group input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  transition: all var(--transition);
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+/* ========== TOGGLE SWITCH ========== */
+
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  width: 52px;
+  height: 28px;
+  background: var(--border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.toggle-switch.enabled {
+  background: var(--brand);
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background: var(--text-inverse);
+  border-radius: var(--radius-full);
+  transition: all var(--transition);
+}
+
+.toggle-switch.enabled::after {
+  left: 26px;
+}
+
+/* ========== SETTINGS ITEMS LIST ========== */
+
+.settings-items {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.settings-item {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.settings-item.active {
+  background: var(--brand-light);
+  color: var(--brand);
+  border-color: var(--brand);
+}
+
+/* ========== BUTTONS ========== */
+
+.settings-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+
+.btn-save,
+.btn-cancel {
+  padding: var(--space-3) var(--space-6);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-save {
+  background: var(--brand);
+  color: var(--text-inverse);
+}
+
+.btn-save:hover:not(:disabled) {
+  background: var(--brand-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-cancel {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-cancel:hover {
+  background: var(--border);
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 1024px) {
+  .settings-layout {
+    grid-template-columns: 200px 1fr;
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+
+  .settings-menu {
+    padding: var(--space-3);
+  }
+
+  .settings-section {
+    padding: var(--space-4);
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .settings-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--space-2);
+    position: static;
+    padding: var(--space-3);
+  }
+
+  .settings-menu-link {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+  }
+
+  .settings-section {
+    padding: var(--space-4);
+  }
+
+  .settings-section h2 {
+    font-size: var(--text-base);
+  }
+
+  .form-group label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+}
+
+@media (max-width: 640px) {
+  .settings-layout {
+    padding: var(--space-3);
+  }
+
+  .settings-menu {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2);
+    padding: var(--space-2);
+  }
+
+  .settings-section {
+    padding: var(--space-3);
+  }
+
+  .settings-section h2 {
+    font-size: var(--text-base);
+    margin-bottom: var(--space-2);
+  }
+
+  .settings-actions {
+    gap: var(--space-2);
+  }
+
+  .btn-save,
+  .btn-cancel {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+    flex: 1;
+  }
+}

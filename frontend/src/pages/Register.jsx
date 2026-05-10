@@ -35,20 +35,35 @@ function Register() {
   };
 
   return (
-    <section className="form-page fade-up">
+    <section className="form-page">
+      <aside className="auth-sidebar">
+        <div className="auth-info-card">
+          <h3>Únete a ALEX</h3>
+          <p>Únete a miles de usuarios que ya están usando ALEX para mejorar su productividad y aprendizaje.</p>
+        </div>
+        <div className="auth-info-card">
+          <h3>Registro Seguro</h3>
+          <p>Tu información está protegida con los más altos estándares de seguridad de la industria.</p>
+        </div>
+        <div className="auth-info-card">
+          <h3>Gratis para Empezar</h3>
+          <p>Comienza gratuitamente y explora todas las funcionalidades. Mejora cuando lo necesites.</p>
+        </div>
+      </aside>
+
       <div className="form-card">
         <h1>Crear cuenta</h1>
-        <p className="form-copy">Registrate con el contrato activo del backend.</p>
+        <p className="form-copy">Registrate para acceder a ALEX y comenzar a conversar con la IA.</p>
 
         <form onSubmit={handleSubmit} className="form-grid">
           <label>
-            Nombre
+            Nombre Completo
             <input
               type="text"
               name="nombre"
               value={formData.nombre}
               onChange={handleChange}
-              placeholder="Tu nombre"
+              placeholder="Tu nombre completo"
               required
             />
           </label>
@@ -66,13 +81,13 @@ function Register() {
           </label>
 
           <label>
-            Password
+            Contraseña
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Minimo 8 caracteres"
+              placeholder="Mínimo 8 caracteres"
               minLength={8}
               required
             />
@@ -87,7 +102,7 @@ function Register() {
         </form>
 
         <p className="helper-row">
-          Ya tienes cuenta? <Link to="/login">Inicia sesion</Link>
+          ¿Ya tienes cuenta? <Link to="/login">Inicia sesión aquí</Link>
         </p>
       </div>
     </section>
