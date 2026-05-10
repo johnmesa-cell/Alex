@@ -3,11 +3,19 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import logoAlex from '../assets/logo-alex.png';
 
+/* Extrae el primer nombre del campo completo */
+function getPrimerNombre(nombre) {
+  if (!nombre) return '';
+  return nombre.trim().split(' ')[0];
+}
+
 function Home() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const primerNombre = getPrimerNombre(user?.nombre);
 
   return (
     <div className="public-page">
+
       {/* ── Hero principal ── */}
       <section className="landing-hero">
         <div className="landing-hero__left">
@@ -48,25 +56,46 @@ function Home() {
 
         <div className="landing-hero__right slide-in">
           <div className="landing-hero-card">
-            {/* Logo real del proyecto */}
             <div className="landing-logo-icon">
               <img src={logoAlex} alt="Logo ALEX" />
             </div>
 
             <p className="landing-eyebrow">Asistente de primeros auxilios con IA</p>
-            <h1 className="landing-headline">
-              Orientación inicial cuando cada segundo importa
-            </h1>
-            <p className="landing-copy">
-              ALEX te guía con pasos iniciales de primeros auxilios mientras contactas ayuda
-              profesional. Inicia sesión o crea tu cuenta para abrir el chat.
-            </p>
 
-            <div className="landing-badges">
-              <span className="landing-badge">Chat guiado</span>
-              <span className="landing-badge">Dictado por voz</span>
-              <span className="landing-badge">Acceso seguro</span>
-            </div>
+            {isAuthenticated ? (
+              /* ── Vista usuario autenticado ── */
+              <>
+                <h1 className="landing-headline">
+                  Bienvenido de nuevo{primerNombre ? `, ${primerNombre}` : ''}.
+                </h1>
+                <p className="landing-copy">
+                  Tu sesión ya está activa. Puedes continuar tus consultas de primeros
+                  auxilios y recibir orientación inicial de forma inmediata mientras
+                  contactas ayuda profesional.
+                </p>
+                <div className="landing-badges">
+                  <span className="landing-badge">Chat guiado</span>
+                  <span className="landing-badge">Dictado por voz</span>
+                  <span className="landing-badge landing-badge--active">Sesión activa</span>
+                </div>
+              </>
+            ) : (
+              /* ── Vista pública ── */
+              <>
+                <h1 className="landing-headline">
+                  Orientación inicial cuando cada segundo importa
+                </h1>
+                <p className="landing-copy">
+                  ALEX te guía con pasos iniciales de primeros auxilios mientras contactas
+                  ayuda profesional. Inicia sesión o crea tu cuenta para abrir el chat.
+                </p>
+                <div className="landing-badges">
+                  <span className="landing-badge">Chat guiado</span>
+                  <span className="landing-badge">Dictado por voz</span>
+                  <span className="landing-badge">Acceso seguro</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -74,8 +103,17 @@ function Home() {
       {/* ── CTA inferior ── */}
       <section className="landing-cta">
         <div className="landing-cta__text">
-          <h2>¿Listo para comenzar?</h2>
-          <p>Accede al asistente y ten una guía inicial cuando más la necesites.</p>
+          {isAuthenticated ? (
+            <>
+              <h2>¿Listo para continuar?</h2>
+              <p>Tu historial y configuración te esperan en el chat.</p>
+            </>
+          ) : (
+            <>
+              <h2>¿Listo para comenzar?</h2>
+              <p>Accede al asistente y ten una guía inicial cuando más la necesites.</p>
+            </>
+          )}
         </div>
         <div className="landing-cta__actions">
           {isAuthenticated ? (
