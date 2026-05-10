@@ -12,59 +12,31 @@ function Navbar() {
     navigate('/');
   };
 
+  const navClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`;
+
   return (
     <header className="navbar">
       {/* Logo */}
       <Link to="/" className="brand">
-        <img
-          src={logoAlex}
-          alt="ALEX logo"
-          className="brand-logo"
-        />
+        <img src={logoAlex} alt="ALEX logo" className="brand-logo" />
         <span className="brand-name">ALEX</span>
       </Link>
 
       {/* Nav centrado */}
       <nav className="nav-links" aria-label="Navegación principal">
-        <NavLink
-          to="/"
-          end
-          className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-        >
-          Inicio
-        </NavLink>
+        <NavLink to="/" end className={navClass}>Inicio</NavLink>
 
         {isAuthenticated ? (
           <>
-            <NavLink
-              to="/chat"
-              className={({ isActive }) => `nav-link nav-link-accent${isActive ? ' active' : ''}`}
-            >
-              Chat
-            </NavLink>
-            <NavLink
-              to="/profile"
-              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-            >
-              Perfil
-            </NavLink>
-            <NavLink
-              to="/settings"
-              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-            >
-              Configuración
-            </NavLink>
+            <NavLink to="/chat" className={navClass}>Chat</NavLink>
+            <NavLink to="/soporte" className={navClass}>Soporte</NavLink>
+            <NavLink to="/informacion" className={navClass}>Información</NavLink>
           </>
         ) : (
           <>
-            <NavLink
-              to="/login"
-              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-            >
-              Chat
-            </NavLink>
-            <span className="nav-link nav-link--disabled">Soporte</span>
-            <span className="nav-link nav-link--disabled">Información</span>
+            <NavLink to="/chat" className={navClass}>Chat</NavLink>
+            <NavLink to="/soporte" className={navClass}>Soporte</NavLink>
+            <NavLink to="/informacion" className={navClass}>Información</NavLink>
           </>
         )}
       </nav>

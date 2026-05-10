@@ -8,19 +8,21 @@ import Register from './pages/Register.jsx';
 import Chat from './pages/Chat.jsx';
 import Settings from './pages/Settings.jsx';
 import Profile from './pages/Profile.jsx';
+import Soporte from './pages/Soporte.jsx';
+import Informacion from './pages/Informacion.jsx';
 
 function App() {
   return (
     <div className="app-root">
       <Navbar />
       <Routes>
-        {/* Rutas públicas — sin sidebar */}
+        {/* Rutas públicas */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-
-        {/* Chat: accesible también como invitado — la página maneja el modo internamente */}
         <Route path="/chat" element={<Chat />} />
+        <Route path="/soporte" element={<Soporte />} />
+        <Route path="/informacion" element={<Informacion />} />
 
         {/* Rutas solo para usuarios autenticados */}
         <Route
