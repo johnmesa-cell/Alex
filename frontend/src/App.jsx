@@ -18,7 +18,7 @@ function App() {
     <div className="app-root">
       <Navbar />
       <Routes>
-        {/* Rutas públicas */}
+        {/* Públicas */}
         <Route path="/"                element={<Home />} />
         <Route path="/login"           element={<Login />} />
         <Route path="/register"        element={<Register />} />
@@ -27,31 +27,16 @@ function App() {
         <Route path="/informacion"     element={<Informacion />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Settings — sin wrappers extra para que use el 100% de pantalla */}
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
+        {/* Settings — sin wrapper, ocupa todo */}
+        <Route path="/settings" element={
+          <ProtectedRoute><Settings /></ProtectedRoute>
+        } />
 
-        {/* Profile */}
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <div className="app-shell">
-                <main className="app-main content-wrap">
-                  <Profile />
-                </main>
-              </div>
-            </ProtectedRoute>
-          }
-        />
+        {/* Profile — sin wrapper, mismo layout que Settings */}
+        <Route path="/profile" element={
+          <ProtectedRoute><Profile /></ProtectedRoute>
+        } />
 
-        {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>

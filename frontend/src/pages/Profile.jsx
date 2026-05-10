@@ -3,7 +3,14 @@ import { useAuth } from '../context/AuthContext.jsx';
 import api, { getApiError } from '../services/api.js';
 
 const AVATAR_COLORS = [
-  '#0f766e','#0369a1','#7c3aed','#b45309','#be185d','#15803d','#c2410c','#1d4ed8'
+  { name: 'Teal',    value: '#0f766e' },
+  { name: 'Azul',    value: '#0369a1' },
+  { name: 'Violeta', value: '#7c3aed' },
+  { name: 'Naranja', value: '#b45309' },
+  { name: 'Rosa',    value: '#be123c' },
+  { name: 'Verde',   value: '#15803d' },
+  { name: 'Cyan',    value: '#0e7490' },
+  { name: 'Morado',  value: '#9333ea' },
 ];
 
 function getInitials(name) {
@@ -13,195 +20,168 @@ function getInitials(name) {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
-function getAvatarColor(nombre) {
-  if (!nombre) return AVATAR_COLORS[0];
-  const code = [...nombre].reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  return AVATAR_COLORS[code % AVATAR_COLORS.length];
-}
-
-function formatFechaLarga(iso) {
-  if (!iso) return 'Desconocido';
-  return new Date(iso).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-function formatFechaCorta(iso) {
-  if (!iso) return 'Hoy';
-  const d = new Date(iso);
-  const ahora = new Date();
-  const diffH = (ahora - d) / 3600000;
-  if (diffH < 1) return 'Hace unos minutos';
-  if (diffH < 24 && d.getDate() === ahora.getDate()) return `Hace ${Math.floor(diffH)}h`;
-  return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
-}
+const PREF_KEY = 'alex_profile_prefs';
+function loadProfilePrefs() { try { return JSON.parse(localStorage.getItem(PREF_KEY)) || {}; } catch { return {}; } }
+function saveProfilePrefs(p) { localStorage.setItem(PREF_KEY, JSON.stringify(p)); }
 
 function Profile() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [nombre, setNombre] = useState(user?.nombre || '');
-  const [ubicacion, setUbicacion] = useState('');
-  const [bio, setBio] = useState('');
+  // Nombre con el que ALEX le llama
+  const [apodo,       setApodo]      = useState('');
+  // Color del avatar
+  const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0].value);
+  // Idioma preferido de respuesta
+  const [idioma,      setIdioma]     = useState('es');
+  // Nivel de detalle en respuestas
+  const [detalle,     setDetalle]    = useState('normal');
+  // Nombre legal (de la cuenta)
+  const [nombre,      setNombre]     = useState(user?.nombre || '');
 
   const [loading, setLoading] = useState(false);
-  const [saveMsg, setSaveMsg] = useState('');
-  const [saveErr, setSaveErr] = useState('');
-
-  // Estadísticas reales
-  const [resumen, setResumen] = useState(null);
-  const [resumenLoading, setResumenLoading] = useState(true);
+  const [msg,     setMsg]     = useState('');
+  const [err,     setErr]     = useState('');
 
   useEffect(() => {
-    api.get('/api/consultas/resumen')
-      .then(({ data }) => setResumen(data?.data ?? null))
-      .catch(() => setResumen(null))
-      .finally(() => setResumenLoading(false));
+    const p = loadProfilePrefs();
+    if (p.apodo)       setApodo(p.apodo);
+    if (p.avatarColor) setAvatarColor(p.avatarColor);
+    if (p.idioma)      setIdioma(p.idioma);
+    if (p.detalle)     setDetalle(p.detalle);
   }, []);
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!nombre.trim()) { setSaveErr('El nombre no puede estar vacío.'); return; }
-    setLoading(true);
-    setSaveErr('');
-    setSaveMsg('');
+    setLoading(true); setErr(''); setMsg('');
     try {
-      await api.put(`/api/users/${user?.id}`, { nombre: nombre.trim() });
-      setSaveMsg('Perfil actualizado correctamente.');
-      setTimeout(() => { setSaveMsg(''); setIsEditing(false); }, 1500);
-    } catch (err) {
-      setSaveErr(getApiError(err));
+      // Guarda nombre legal en backend si cambió
+      if (nombre.trim() && nombre.trim() !== user?.nombre) {
+        await api.put(`/api/users/${user?.id}`, { nombre: nombre.trim() });
+      }
+      // Guarda preferencias de personalización en localStorage
+      saveProfilePrefs({ apodo, avatarColor, idioma, detalle });
+      setMsg('Perfil personalizado guardado correctamente.');
+      setTimeout(() => setMsg(''), 3000);
+    } catch (e2) {
+      setErr(getApiError(e2));
     } finally {
       setLoading(false);
     }
   };
 
-  const initials   = getInitials(nombre);
-  const bgColor    = getAvatarColor(nombre);
-  const miembroDesde = formatFechaLarga(user?.fechaRegistro);
-  const ultimaActividad = formatFechaCorta(resumen?.ultimaConsulta?.fecha_creacion);
+  const initials = getInitials(apodo || nombre || user?.nombre);
+  const displayName = apodo || nombre || user?.nombre || 'Usuario';
 
   return (
     <div className="profile-layout">
-      {/* SIDEBAR */}
+
+      {/* ── SIDEBAR con preview del avatar ── */}
       <aside className="profile-sidebar">
         <div className="profile-avatar-wrapper">
-          <div className="profile-avatar" style={{ background: bgColor }}>{initials}</div>
-          <h3 className="profile-name">{nombre || 'Usuario'}</h3>
+          <div
+            className="profile-avatar"
+            style={{ background: avatarColor }}
+            aria-label={`Avatar de ${displayName}`}
+          >
+            {initials}
+          </div>
+          <h3 className="profile-name">{displayName}</h3>
           <p className="profile-email">{user?.correo || user?.email || ''}</p>
-          <div className="profile-status">Activo</div>
+          <div className="profile-status">Vista previa</div>
         </div>
-        <div className="profile-actions">
-          <button className="profile-action-btn primary" onClick={() => setIsEditing(!isEditing)}>
-            {isEditing ? 'Cancelar' : 'Editar Perfil'}
-          </button>
-          <button className="profile-action-btn" onClick={logout}>Cerrar Sesión</button>
+
+        {/* Selector de color de avatar */}
+        <div className="profile-color-picker">
+          <p className="profile-color-label">Color del avatar</p>
+          <div className="profile-color-swatches">
+            {AVATAR_COLORS.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                title={c.name}
+                className={`color-swatch${avatarColor === c.value ? ' active' : ''}`}
+                style={{ background: c.value }}
+                onClick={() => setAvatarColor(c.value)}
+                aria-pressed={avatarColor === c.value}
+              />
+            ))}
+          </div>
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
+      {/* ── CONTENIDO principal ── */}
       <div className="profile-content">
 
-        {/* EDICIÓN */}
-        {isEditing && (
-          <section className="profile-section fade-up">
-            <h2>Editar Perfil</h2>
-            <form onSubmit={handleSave} className="settings-form">
-              <div className="profile-grid">
-                <div className="profile-field">
-                  <label htmlFor="p-nombre">Nombre Completo</label>
-                  <input id="p-nombre" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Tu nombre" />
-                </div>
-                <div className="profile-field">
-                  <label htmlFor="p-ubicacion">Ubicación</label>
-                  <input id="p-ubicacion" type="text" value={ubicacion} onChange={(e) => setUbicacion(e.target.value)} placeholder="Tu ubicación" />
-                </div>
-              </div>
-              <div className="profile-field">
-                <label htmlFor="p-bio">Biografía</label>
-                <textarea id="p-bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Cuéntanos sobre ti" rows={3} />
-              </div>
-              {saveErr && <p className="error-box">{saveErr}</p>}
-              {saveMsg && <p className="success-box">{saveMsg}</p>}
-              <div className="profile-actions-bottom">
-                <button type="submit" className="btn-profile-save" disabled={loading}>
-                  {loading ? 'Guardando...' : 'Guardar Cambios'}
-                </button>
-                <button type="button" className="btn-profile-cancel" onClick={() => setIsEditing(false)}>Descartar</button>
-              </div>
-            </form>
-          </section>
-        )}
+        <section className="profile-section">
+          <h2>Personaliza tu experiencia</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-6)', lineHeight: 1.6 }}>
+            Dile a ALEX cómo quieres que te llame y ajusta cómo te responde.
+          </p>
 
-        {/* INFORMACIÓN */}
-        {!isEditing && (
-          <section className="profile-section fade-up">
-            <h2>Información del Perfil</h2>
-            <div className="profile-info">
-              <div className="info-row">
-                <span className="info-label">Nombre:</span>
-                <span className="info-value">{nombre || '—'}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Email:</span>
-                <span className="info-value">{user?.correo || user?.email || '—'}</span>
-              </div>
-              {ubicacion && (
-                <div className="info-row">
-                  <span className="info-label">Ubicación:</span>
-                  <span className="info-value">{ubicacion}</span>
-                </div>
-              )}
-              {bio && (
-                <div className="info-row">
-                  <span className="info-label">Biografía:</span>
-                  <span className="info-value">{bio}</span>
-                </div>
-              )}
-              <div className="info-row">
-                <span className="info-label">Miembro desde:</span>
-                <span className="info-value">{miembroDesde}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Estado:</span>
-                <span className="info-value">✓ Verificado</span>
-              </div>
-            </div>
-          </section>
-        )}
+          <form onSubmit={handleSave} className="settings-form">
 
-        {/* ESTADÍSTICAS REALES */}
-        <section className="profile-section fade-up">
-          <h2>Estadísticas</h2>
-          <div className="profile-info">
-            <div className="info-row">
-              <span className="info-label">Consultas totales:</span>
-              <span className="info-value">{resumenLoading ? '…' : (resumen?.totalConsultas ?? 0)}</span>
+            {/* Nombre legal */}
+            <div className="form-group">
+              <label htmlFor="p-nombre">Nombre completo (cuenta)</label>
+              <input
+                id="p-nombre"
+                type="text"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Tu nombre completo"
+              />
+              <small style={{ color: 'var(--text-faint)', fontSize: 'var(--text-xs)' }}>Este es el nombre registrado en tu cuenta.</small>
             </div>
-            <div className="info-row">
-              <span className="info-label">Archivos subidos:</span>
-              <span className="info-value">{resumenLoading ? '…' : (resumen?.archivosSubidos ?? 0)}</span>
-            </div>
-            <div className="info-row">
-              <span className="info-label">Última actividad:</span>
-              <span className="info-value">{resumenLoading ? '…' : ultimaActividad}</span>
-            </div>
-          </div>
-        </section>
 
-        {/* SEGURIDAD */}
-        <section className="profile-section fade-up">
-          <h2>Seguridad de la Cuenta</h2>
-          <div className="profile-info">
-            <div className="info-row">
-              <span className="info-label">Sesiones activas:</span>
-              <span className="info-value">1</span>
+            {/* Apodo — con énfasis */}
+            <div className="form-group">
+              <label htmlFor="p-apodo">
+                ¿Cómo quieres que ALEX te llame?
+                <span className="profile-badge">Personalizado</span>
+              </label>
+              <input
+                id="p-apodo"
+                type="text"
+                value={apodo}
+                onChange={(e) => setApodo(e.target.value)}
+                placeholder={`Por ejemplo: "${(nombre || 'Juan').split(' ')[0]}", "Profe", "Doc"…`}
+                maxLength={30}
+              />
+              <small style={{ color: 'var(--text-faint)', fontSize: 'var(--text-xs)' }}>
+                Si lo dejas en blanco, ALEX usará tu nombre completo.
+              </small>
             </div>
-            <div className="info-row">
-              <span className="info-label">Contraseña:</span>
-              <span className="info-value" style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                El cambio de contraseña se gestiona desde la opción «Olvidé mi contraseña» en el login.
-              </span>
+
+            {/* Idioma */}
+            <div className="form-group">
+              <label htmlFor="p-idioma">Idioma de respuesta preferido</label>
+              <select id="p-idioma" value={idioma} onChange={(e) => setIdioma(e.target.value)}>
+                <option value="es">Español</option>
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+                <option value="pt">Português</option>
+              </select>
             </div>
-          </div>
+
+            {/* Nivel de detalle */}
+            <div className="form-group">
+              <label htmlFor="p-detalle">Nivel de detalle en respuestas</label>
+              <select id="p-detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)}>
+                <option value="breve">Breve — respuestas concisas y directas</option>
+                <option value="normal">Normal — equilibrado (recomendado)</option>
+                <option value="detallado">Detallado — explicaciones completas</option>
+              </select>
+            </div>
+
+            {err && <p className="error-box">{err}</p>}
+            {msg && <p className="success-box">{msg}</p>}
+
+            <div className="settings-actions">
+              <button type="submit" className="btn-save" disabled={loading}>
+                {loading ? 'Guardando…' : 'Guardar Personalización'}
+              </button>
+            </div>
+          </form>
         </section>
 
       </div>
