@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import logoAlex from '../assets/logo-alex.png';
@@ -21,7 +21,6 @@ function avatarColor(nombre) {
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
-// SVG inline — sin depender de fuentes de iconos
 const IcoUser = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
@@ -51,7 +50,9 @@ function Navbar() {
   const navigate = useNavigate();
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
+  // Posición del panel en coordenadas de ventana
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  const avatarRef = useRef(null);
 
   const handleLogout = async () => {
     setMenuOpen(false);
@@ -60,23 +61,54 @@ function Navbar() {
   };
 
   const navClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`;
-  const initials = getInitials(user?.nombre);
-  const bgColor  = avatarColor(user?.nombre);
+  const initials  = getInitials(user?.nombre);
+  const bgColor   = avatarColor(user?.nombre);
 
+  // Calcula posición del panel justo bajo el avatar usando getBoundingClientRect
+  const openMenu = useCallback(() => {
+    if (avatarRef.current) {
+      const rect = avatarRef.current.getBoundingClientRect();
+      setMenuPos({
+        top:   rect.bottom + 8,
+        // right = distancia desde el borde derecho de la ventana hasta el borde derecho del avatar
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setMenuOpen(true);
+  }, []);
+
+  const toggleMenu = useCallback(() => {
+    if (menuOpen) setMenuOpen(false);
+    else openMenu();
+  }, [menuOpen, openMenu]);
+
+  // Cierra al hacer click fuera
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+      if (
+        avatarRef.current && avatarRef.current.contains(e.target)
+      ) return; // click en el avatar: lo maneja toggleMenu
+      setMenuOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
+  // Cierra con Escape
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') setMenuOpen(false); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, []);
+
+  // Recalcula posición al redimensionar ventana
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = () => openMenu();
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, [menuOpen, openMenu]);
 
   return (
     <header className="navbar">
@@ -94,12 +126,14 @@ function Navbar() {
 
       <div className="navbar-session">
         {isAuthenticated ? (
-          <div className="user-menu-wrap" ref={menuRef}>
+          <div className="user-menu-wrap">
+            {/* Avatar — sin ref en el wrapper, el ref va directo al botón */}
             <button
+              ref={avatarRef}
               type="button"
               className={`user-avatar${menuOpen ? ' user-avatar--open' : ''}`}
               style={{ backgroundColor: bgColor }}
-              onClick={() => setMenuOpen((v) => !v)}
+              onClick={toggleMenu}
               aria-haspopup="true"
               aria-expanded={menuOpen}
               aria-label={`Menú de ${user?.nombre || 'usuario'}`}
@@ -107,8 +141,18 @@ function Navbar() {
               {initials}
             </button>
 
+            {/* Panel — position:fixed, fuera del flujo del navbar */}
             {menuOpen && (
-              <div className="user-menu" role="menu">
+              <div
+                className="user-menu"
+                role="menu"
+                style={{
+                  position: 'fixed',
+                  top:   menuPos.top,
+                  right: menuPos.right,
+                  left:  'auto',
+                }}
+              >
                 {/* Cabecera */}
                 <div className="user-menu__header">
                   <div className="user-menu__avatar" style={{ backgroundColor: bgColor }} aria-hidden="true">
