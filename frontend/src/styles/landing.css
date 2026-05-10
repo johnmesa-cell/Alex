@@ -259,31 +259,63 @@
   color: inherit;
 }
 
-/* brand-subtitle eliminado — era redundante */
 .brand-subtitle {
   display: none;
 }
 
-/* ── Nav pills ── */
+/* ── Nav pills: contenedor ── */
 .nav-links {
   display: flex;
-  gap: var(--space-2);
   align-items: center;
   justify-content: center;
+  gap: var(--space-2);
   background: var(--brand-light);
-  padding: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-full);
 }
 
-.nav-link--disabled {
+/* ── Cada ítem del nav: su propia píldora ── */
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: var(--font-body);
   font-size: var(--text-sm);
   font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--transition);
+  line-height: 1;
+}
+
+.nav-link:hover {
+  background: var(--card);
+  border-color: var(--border-strong);
+  color: var(--brand-strong);
+}
+
+/* Estado activo: fondo verde de marca — igual al mockup */
+.nav-link.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Ítems deshabilitados */
+.nav-link--disabled,
+.nav-link.nav-link--disabled {
+  background: transparent;
+  border-color: transparent;
   color: var(--text-faint);
   cursor: default;
   pointer-events: none;
-  white-space: nowrap;
 }
 
 /* ── Sesión derecha ── */
