@@ -97,6 +97,12 @@
   margin-bottom: var(--space-2);
 }
 
+.landing-logo-icon img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
 .landing-eyebrow {
   font-size: var(--text-xs);
   font-weight: 700;
@@ -192,14 +198,14 @@
   border-top: 1px solid var(--divider);
 }
 
-/* ── App root (nuevo wrapper sin grid sidebar) ── */
+/* ── App root ── */
 .app-root {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 
-/* Navbar corregida: full-width sobre todo */
+/* ── Navbar ── */
 .navbar {
   position: sticky;
   top: 0;
@@ -218,6 +224,7 @@
   box-sizing: border-box;
 }
 
+/* ── Brand: solo logo + nombre ── */
 .brand {
   display: flex;
   align-items: center;
@@ -229,17 +236,34 @@
   color: var(--brand-strong);
   text-decoration: none;
   transition: color var(--transition);
+  line-height: 1;
 }
 
 .brand:hover {
   color: var(--brand);
 }
 
-.brand-icon {
-  display: flex;
-  align-items: center;
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
 }
 
+.brand-name {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: inherit;
+}
+
+/* brand-subtitle eliminado — era redundante */
+.brand-subtitle {
+  display: none;
+}
+
+/* ── Nav pills ── */
 .nav-links {
   display: flex;
   gap: var(--space-2);
@@ -260,11 +284,35 @@
   pointer-events: none;
 }
 
+/* ── Sesión derecha ── */
 .navbar-session {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   justify-self: end;
+}
+
+/* Botones proporcionales dentro de la navbar */
+.btn-nav {
+  padding: var(--space-2) var(--space-4) !important;
+  font-size: var(--text-xs) !important;
+  font-weight: 700 !important;
+  height: 34px;
+  line-height: 1;
+  display: inline-flex !important;
+  align-items: center !important;
+  border-radius: var(--radius-full) !important;
+}
+
+.session-pill {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+  background: var(--bg-alt);
+  white-space: nowrap;
 }
 
 /* ── Responsive ── */
