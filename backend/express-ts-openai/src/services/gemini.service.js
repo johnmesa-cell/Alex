@@ -4,8 +4,6 @@ function getGeminiClient() {
     // Soporta ambos nombres comunes de variable para evitar errores de entorno.
     const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "").trim();
 
-    console.log("API KEY:", apiKey);
-
     if (!apiKey) {
         throw new Error("GEMINI_API_KEY no esta configurada en el entorno del backend.");
     }
@@ -23,7 +21,7 @@ Instrucciones estrictas:
 export const getGeminiGuidance = async (userMessage) => {
     try {
         const genAI = getGeminiClient();
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const result = await model.generateContent(`${SYSTEM_INSTRUCTION}\n\nPregunta del usuario: ${userMessage}`);
         const response = await result.response;
@@ -39,7 +37,7 @@ export const getGeminiGuidance = async (userMessage) => {
 export const getGeminiResponseWithContext = async (question, context) => {
     try {
         const genAI = getGeminiClient();
-        const GEMINI_MODEL_NAME = "gemini-1.5-flash";
+        const GEMINI_MODEL_NAME = "gemini-2.0-flash";
 const model = genAI.getGenerativeModel({ model: GEMINI_MODEL_NAME }); // Usamos un modelo más potente para RAG
 
         const prompt = `

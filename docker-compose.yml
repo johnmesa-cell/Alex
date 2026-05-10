@@ -36,7 +36,7 @@ services:
       dockerfile: Dockerfile
     container_name: alex_app
     restart: always
-    command: sh -c "npx prisma db push && npm run dev"
+    command: sh -c "npx prisma db push && npx prisma db seed && npm run dev"
     volumes:
       - ./backend/express-ts-openai:/app
       - /app/node_modules

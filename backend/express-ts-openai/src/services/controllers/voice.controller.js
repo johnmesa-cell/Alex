@@ -48,7 +48,7 @@ export const handleVoiceAssistant = async (req, res) => {
         console.log(`Audio recibido en: ${audioPath}`);
 
         const genAI = getGeminiClient();
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         // 1. Audio-to-Text y Análisis con Gemini
         const audioBuffer = await fs.readFile(audioPath);

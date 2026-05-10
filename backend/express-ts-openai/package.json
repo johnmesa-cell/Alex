@@ -21,6 +21,7 @@
     "bcryptjs": "^3.0.3",
     "body-parser": "^1.20.2",
     "chromadb": "^3.4.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
@@ -38,7 +39,8 @@
     "prisma": "^6.1.0"
   },
   "prisma": {
-    "schema": "prisma/schema.prisma"
+    "schema": "prisma/schema.prisma",
+    "seed": "node prisma/seed.js"
   },
   "type": "module"
 }
