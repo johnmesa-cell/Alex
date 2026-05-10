@@ -19,19 +19,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Rutas autenticadas — con sidebar via app-shell */}
-        <Route
-          path="/chat"
-          element={
-            <ProtectedRoute>
-              <div className="app-shell">
-                <main className="app-main content-wrap">
-                  <Chat />
-                </main>
-              </div>
-            </ProtectedRoute>
-          }
-        />
+        {/* Chat: accesible también como invitado — la página maneja el modo internamente */}
+        <Route path="/chat" element={<Chat />} />
+
+        {/* Rutas solo para usuarios autenticados */}
         <Route
           path="/settings"
           element={

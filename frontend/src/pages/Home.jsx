@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import logoAlex from '../assets/logo-alex.png';
 
 function Home() {
   const { isAuthenticated } = useAuth();
@@ -47,16 +48,9 @@ function Home() {
 
         <div className="landing-hero__right slide-in">
           <div className="landing-hero-card">
-            {/* Logo / ícono */}
-            <div className="landing-logo-icon" aria-hidden="true">
-              <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="36" cy="36" r="34" stroke="#0f766e" strokeWidth="2" fill="none" />
-                <circle cx="36" cy="36" r="26" stroke="#0f766e" strokeWidth="1" fill="none" opacity="0.4" />
-                <path d="M20 36 Q24 26 28 36 Q30 40 32 34 L36 28 L40 38 Q42 42 44 36 Q48 26 52 36"
-                  stroke="#0f766e" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M34 36 h-4 M38 36 h4 M36 34 v-4 M36 38 v4"
-                  stroke="#ff7f50" strokeWidth="2" strokeLinecap="round" />
-              </svg>
+            {/* Logo real del proyecto */}
+            <div className="landing-logo-icon">
+              <img src={logoAlex} alt="Logo ALEX" />
             </div>
 
             <p className="landing-eyebrow">Asistente de primeros auxilios con IA</p>
@@ -72,10 +66,6 @@ function Home() {
               <span className="landing-badge">Chat guiado</span>
               <span className="landing-badge">Dictado por voz</span>
               <span className="landing-badge">Acceso seguro</span>
-            </div>
-
-            <div className="landing-mockup-banner">
-              Mockup visual de portada para usuario sin sesión activa.
             </div>
           </div>
         </div>
@@ -93,7 +83,7 @@ function Home() {
           ) : (
             <>
               <Link to="/register" className="btn-primary">Entrar ahora</Link>
-              <Link to="/login" className="btn-secondary">Probar como invitado</Link>
+              <Link to="/chat" className="btn-secondary">Probar como invitado</Link>
             </>
           )}
         </div>
