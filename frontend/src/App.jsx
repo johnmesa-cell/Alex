@@ -10,6 +10,8 @@ import Settings from './pages/Settings.jsx';
 import Profile from './pages/Profile.jsx';
 import Soporte from './pages/Soporte.jsx';
 import Informacion from './pages/Informacion.jsx';
+import ForgotPassword from './pages/ForgotPassword.jsx';
+import NotFound from './pages/NotFound.jsx';
 
 function App() {
   return (
@@ -17,14 +19,15 @@ function App() {
       <Navbar />
       <Routes>
         {/* Rutas públicas */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/soporte" element={<Soporte />} />
-        <Route path="/informacion" element={<Informacion />} />
+        <Route path="/"                element={<Home />} />
+        <Route path="/login"           element={<Login />} />
+        <Route path="/register"        element={<Register />} />
+        <Route path="/chat"            element={<Chat />} />
+        <Route path="/soporte"         element={<Soporte />} />
+        <Route path="/informacion"     element={<Informacion />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Rutas solo para usuarios autenticados */}
+        {/* Rutas protegidas */}
         <Route
           path="/settings"
           element={
@@ -49,7 +52,9 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+
+        {/* 404 */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
   );

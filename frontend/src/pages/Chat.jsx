@@ -11,21 +11,18 @@ const QUICK_REPLIES = [
 
 const ACCEPTED_TYPES = '.pdf,.png,.jpg,.jpeg';
 const MAX_FILE_MB = 5;
+const SESSION_KEY = 'alex_guest_chat';
 
 function formatFecha(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   const ahora = new Date();
-  const diffMs = ahora - d;
-  const diffH = diffMs / 3600000;
-  if (diffH < 24 && d.getDate() === ahora.getDate()) {
+  const diffH = (ahora - d) / 3600000;
+  if (diffH < 24 && d.getDate() === ahora.getDate())
     return 'Hoy, ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-  }
-  const ayer = new Date(ahora);
-  ayer.setDate(ayer.getDate() - 1);
-  if (d.getDate() === ayer.getDate() && diffH < 48) {
+  const ayer = new Date(ahora); ayer.setDate(ayer.getDate() - 1);
+  if (d.getDate() === ayer.getDate() && diffH < 48)
     return 'Ayer, ' + d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-  }
   return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
 }
 
@@ -46,18 +43,31 @@ const IconSettings = () => (
   </svg>
 );
 
+const WELCOME_AUTH  = 'Hola, soy ALEX. Describe la situación y te daré orientación inicial de primeros auxilios.';
+const WELCOME_GUEST = 'Hola, estás en modo invitado. Puedo darte orientación inicial, pero no guardaré historial de esta sesión.';
+
 function Chat() {
   const { isAuthenticated, user } = useAuth();
 
+  // Mensajes — invitado: persiste en sessionStorage mientras la pestaña vive
+  const [messages, setMessages] = useState(() => {
+    if (!isAuthenticated) {
+      try {
+        const saved = sessionStorage.getItem(SESSION_KEY);
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return [{ role: 'assistant', text: isAuthenticated ? WELCOME_AUTH : WELCOME_GUEST }];
+  });
+
+  // Persiste mensajes de invitado en sessionStorage
+  useEffect(() => {
+    if (!isAuthenticated) {
+      try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(messages)); } catch {}
+    }
+  }, [messages, isAuthenticated]);
+
   const [prompt, setPrompt] = useState('');
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      text: isAuthenticated
-        ? 'Hola, soy ALEX. Describe la situación y te daré orientación inicial de primeros auxilios.'
-        : 'Hola, estás en modo invitado. Puedo darte orientación inicial, pero no guardaré historial de esta sesión.',
-    },
-  ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
@@ -73,7 +83,7 @@ function Chat() {
   const [fileSuccess, setFileSuccess] = useState('');
   const fileInputRef = useRef(null);
 
-  // ── Historial real desde la BD ──
+  // Historial real desde la BD
   const [historial, setHistorial] = useState([]);
   const [historialLoading, setHistorialLoading] = useState(false);
   const [historialError, setHistorialError] = useState('');
@@ -92,10 +102,9 @@ function Chat() {
     }
   };
 
-  // Carga inicial del historial
   useEffect(() => {
     if (isAuthenticated) fetchHistorial();
-  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]); // eslint-disable-line
 
   const speechEnabled = useMemo(
     () => typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window),
@@ -115,7 +124,6 @@ function Chat() {
       const { data } = await api.post('/api/ai/guidance', { prompt: clean });
       const answer = data?.data?.respuesta || 'No se recibió respuesta válida del servidor.';
       setMessages((prev) => [...prev, { role: 'assistant', text: answer }]);
-      // Refresca historial después de enviar (la BD ya fue actualizada por el backend)
       if (isAuthenticated) fetchHistorial();
     } catch (err) {
       setError(getApiError(err));
@@ -132,10 +140,10 @@ function Chat() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     const rec = new SR();
     rec.lang = 'es-CO'; rec.interimResults = false; rec.maxAlternatives = 1;
-    rec.onstart = () => { setIsListening(true); setError(''); };
+    rec.onstart  = () => { setIsListening(true); setError(''); };
     rec.onresult = (e) => setPrompt(e.results?.[0]?.[0]?.transcript || '');
-    rec.onerror = () => setError('No fue posible capturar audio. Verifica permisos del micrófono.');
-    rec.onend = () => setIsListening(false);
+    rec.onerror  = () => setError('No fue posible capturar audio. Verifica permisos del micrófono.');
+    rec.onend    = () => setIsListening(false);
     recognitionRef.current = rec;
     rec.start();
   };
@@ -176,66 +184,33 @@ function Chat() {
   return (
     <div className="chat-page">
 
-      {/* ======== RAIL IZQUIERDO FIJO (solo autenticado) ======== */}
       {isAuthenticated && (
         <>
           <nav className="chat-rail">
             <div className="rail-top">
-              <button
-                type="button"
-                className={`rail-btn${activePanel === 'historial' ? ' rail-btn--active' : ''}`}
-                onClick={() => togglePanel('historial')}
-                title="Historial"
-                aria-label="Abrir historial"
-              >
-                <IconHistory />
-              </button>
-              <button
-                type="button"
-                className={`rail-btn${activePanel === 'metricas' ? ' rail-btn--active' : ''}`}
-                onClick={() => togglePanel('metricas')}
-                title="Métricas"
-                aria-label="Abrir métricas"
-              >
-                <IconMetrics />
-              </button>
+              <button type="button" className={`rail-btn${activePanel === 'historial' ? ' rail-btn--active' : ''}`} onClick={() => togglePanel('historial')} title="Historial" aria-label="Abrir historial"><IconHistory /></button>
+              <button type="button" className={`rail-btn${activePanel === 'metricas'  ? ' rail-btn--active' : ''}`} onClick={() => togglePanel('metricas')}  title="Métricas"  aria-label="Abrir métricas"><IconMetrics /></button>
             </div>
             <div className="rail-bottom">
-              <button type="button" className="rail-btn" title="Configuración" aria-label="Configuración">
-                <IconSettings />
-              </button>
+              <button type="button" className="rail-btn" title="Configuración" aria-label="Ir a configuración" onClick={() => { window.location.href = '/settings'; }}><IconSettings /></button>
             </div>
           </nav>
 
           {activePanel && (
             <div className="rail-drawer" role="region" aria-label={activePanel}>
               <div className="rail-drawer__head">
-                <span className="rail-drawer__title">
-                  {activePanel === 'historial' ? 'Historial' : 'Métricas'}
-                </span>
+                <span className="rail-drawer__title">{activePanel === 'historial' ? 'Historial' : 'Métricas'}</span>
                 <button type="button" className="rail-drawer__close" onClick={() => setActivePanel(null)} aria-label="Cerrar panel">×</button>
               </div>
 
               {activePanel === 'historial' && (
                 <>
-                  <button
-                    type="button"
-                    className="sidebar-new-btn"
-                    onClick={() => {
-                      setMessages([{ role: 'assistant', text: 'Hola, soy ALEX. Describe la situación y te daré orientación inicial de primeros auxilios.' }]);
-                      setActivePanel(null);
-                    }}
-                  >
-                    + Nueva consulta
-                  </button>
-
+                  <button type="button" className="sidebar-new-btn" onClick={() => { setMessages([{ role: 'assistant', text: WELCOME_AUTH }]); setActivePanel(null); }}>+ Nueva consulta</button>
                   {historialLoading && <p style={{ padding: '12px', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Cargando historial…</p>}
-                  {historialError && <p style={{ padding: '12px', color: 'var(--color-error)', fontSize: 'var(--text-sm)' }}>{historialError}</p>}
-
+                  {historialError  && <p style={{ padding: '12px', color: 'var(--color-error)', fontSize: 'var(--text-sm)' }}>{historialError}</p>}
                   {!historialLoading && !historialError && historial.length === 0 && (
                     <p style={{ padding: '12px', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Aún no tienes consultas guardadas.</p>
                   )}
-
                   {!historialLoading && historial.length > 0 && (
                     <ul className="historial-list">
                       {historial.map((h) => (
@@ -251,22 +226,10 @@ function Chat() {
 
               {activePanel === 'metricas' && (
                 <ul className="metrics-list">
-                  <li className="metric-item">
-                    <span className="metric-label">Consultas sesión</span>
-                    <span className="metric-value">{messages.filter(m => m.role === 'user').length}</span>
-                  </li>
-                  <li className="metric-item">
-                    <span className="metric-label">Mensajes totales</span>
-                    <span className="metric-value">{messages.length}</span>
-                  </li>
-                  <li className="metric-item">
-                    <span className="metric-label">Historial guardado</span>
-                    <span className="metric-value">{historial.length}</span>
-                  </li>
-                  <li className="metric-item">
-                    <span className="metric-label">Usuario</span>
-                    <span className="metric-value">{user?.nombre || '—'}</span>
-                  </li>
+                  <li className="metric-item"><span className="metric-label">Consultas sesión</span><span className="metric-value">{messages.filter(m => m.role === 'user').length}</span></li>
+                  <li className="metric-item"><span className="metric-label">Mensajes totales</span><span className="metric-value">{messages.length}</span></li>
+                  <li className="metric-item"><span className="metric-label">Historial guardado</span><span className="metric-value">{historial.length}</span></li>
+                  <li className="metric-item"><span className="metric-label">Usuario</span><span className="metric-value">{user?.nombre || '—'}</span></li>
                 </ul>
               )}
             </div>
@@ -274,7 +237,6 @@ function Chat() {
         </>
       )}
 
-      {/* ======== CONTENIDO CENTRAL ======== */}
       <div className="chat-content">
         {!isAuthenticated && (
           <div className="guest-alert" role="alert">
@@ -289,11 +251,7 @@ function Chat() {
           <div className="chat-head">
             <div>
               <h1>Chat IA</h1>
-              <p className="chat-head__sub">
-                {isAuthenticated
-                  ? 'Consulta con historial y funciones completas.'
-                  : 'Consulta rápida sin cuenta registrada.'}
-              </p>
+              <p className="chat-head__sub">{isAuthenticated ? 'Consulta con historial y funciones completas.' : 'Consulta rápida sin cuenta registrada.'}</p>
             </div>
             <span className="chip">{isAuthenticated ? 'Sesión activa' : 'Sesión temporal'}</span>
           </div>
@@ -316,9 +274,7 @@ function Chat() {
 
           <div className="quick-replies" aria-label="Respuestas rápidas">
             {QUICK_REPLIES.map((qr) => (
-              <button key={qr.label} type="button" className="quick-reply" onClick={() => setPrompt(qr.text)}>
-                {qr.label}
-              </button>
+              <button key={qr.label} type="button" className="quick-reply" onClick={() => setPrompt(qr.text)}>{qr.label}</button>
             ))}
           </div>
 
@@ -333,18 +289,15 @@ function Chat() {
             <div className="char-counter-row"><span className="char-counter">{prompt.length}/400</span></div>
             {error && <p className="error-box">{error}</p>}
             <div className="chat-actions">
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? 'Enviando...' : (isAuthenticated ? 'Enviar' : 'Enviar en modo invitado')}
-              </button>
+              <button type="submit" className="btn-primary" disabled={loading}>{loading ? 'Enviando...' : (isAuthenticated ? 'Enviar' : 'Enviar en modo invitado')}</button>
               {speechEnabled && !isListening && <button type="button" className="btn-secondary" onClick={startSpeech}>Dictar por voz</button>}
-              {speechEnabled && isListening && <button type="button" className="btn-secondary" onClick={stopSpeech}>Detener dictado</button>}
+              {speechEnabled &&  isListening && <button type="button" className="btn-secondary" onClick={stopSpeech}>Detener dictado</button>}
               {!isAuthenticated && <Link to="/login" className="btn-secondary">Desbloquear funciones</Link>}
             </div>
           </form>
         </section>
       </div>
 
-      {/* ======== PANEL DERECHO FIJO: archivos ======== */}
       <aside className="chat-side">
         {isAuthenticated ? (
           <div className="side-content">
@@ -352,27 +305,19 @@ function Chat() {
             <p className="sidebar-hint">PDF, PNG, JPG — máx. {MAX_FILE_MB} MB</p>
             <label className="file-drop" htmlFor="file-input">
               {selectedFile ? (
-                <span className="file-selected">
-                  📎 {selectedFile.name}
-                  <button type="button" className="file-remove" onClick={(e) => { e.preventDefault(); removeFile(); }}>×</button>
-                </span>
+                <span className="file-selected">📎 {selectedFile.name}<button type="button" className="file-remove" onClick={(e) => { e.preventDefault(); removeFile(); }}>×</button></span>
               ) : (
                 <span>Haz clic o arrastra un archivo</span>
               )}
             </label>
             <input id="file-input" ref={fileInputRef} type="file" accept={ACCEPTED_TYPES} onChange={handleFileChange} className="file-input-hidden" />
-            {fileError && <p className="error-box">{fileError}</p>}
+            {fileError   && <p className="error-box">{fileError}</p>}
             {fileSuccess && <p className="success-box">{fileSuccess}</p>}
-            <button type="button" className="btn-primary" style={{ width: '100%' }} disabled={!selectedFile} onClick={handleFileUpload}>
-              Subir archivo
-            </button>
+            <button type="button" className="btn-primary" style={{ width: '100%' }} disabled={!selectedFile} onClick={handleFileUpload}>Subir archivo</button>
           </div>
         ) : (
           <>
-            <div>
-              <h3>Disponibles</h3>
-              <p>Chat básico, respuestas rápidas y guía inicial.</p>
-            </div>
+            <div><h3>Disponibles</h3><p>Chat básico, respuestas rápidas y guía inicial.</p></div>
             <div className="locked-card"><h4>Historial</h4><p>Inicia sesión para guardar conversaciones.</p></div>
             <div className="locked-card"><h4>Subida de archivos</h4><p>Inicia sesión para adjuntar documentos.</p></div>
             <div className="locked-card"><h4>Métricas</h4><p>Inicia sesión para ver tu actividad.</p></div>
