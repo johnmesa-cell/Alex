@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import Home from './pages/Home.jsx';
@@ -27,19 +27,17 @@ function App() {
         <Route path="/informacion"     element={<Informacion />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* Rutas protegidas */}
+        {/* Settings — sin wrappers extra para que use el 100% de pantalla */}
         <Route
           path="/settings"
           element={
             <ProtectedRoute>
-              <div className="app-shell">
-                <main className="app-main content-wrap">
-                  <Settings />
-                </main>
-              </div>
+              <Settings />
             </ProtectedRoute>
           }
         />
+
+        {/* Profile */}
         <Route
           path="/profile"
           element={

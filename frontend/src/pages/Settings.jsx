@@ -3,30 +3,50 @@ import { useAuth } from '../context/AuthContext.jsx';
 import api, { getApiError } from '../services/api.js';
 
 const PREF_KEY = 'alex_prefs';
+function loadPrefs() { try { return JSON.parse(localStorage.getItem(PREF_KEY)) || {}; } catch { return {}; } }
+function savePrefs(p) { localStorage.setItem(PREF_KEY, JSON.stringify(p)); }
 
-function loadPrefs() {
-  try { return JSON.parse(localStorage.getItem(PREF_KEY)) || {}; } catch { return {}; }
+function applyTheme(t) {
+  const r = document.documentElement;
+  if (t === 'dark') r.classList.add('dark');
+  else if (t === 'light') r.classList.remove('dark');
+  else r.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches);
 }
-function savePrefs(prefs) {
-  localStorage.setItem(PREF_KEY, JSON.stringify(prefs));
+function applyFontSize(s) { document.documentElement.style.setProperty('--base-font-size', `${s}px`); }
+
+/** Botón toggle visual accesible: reemplaza <input type="checkbox"> */
+function Toggle({ checked, onChange, id }) {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      className="toggle-btn"
+      onClick={() => onChange(!checked)}
+    />
+  );
 }
 
-function applyTheme(theme) {
-  const root = document.documentElement;
-  if (theme === 'dark') {
-    root.classList.add('dark');
-  } else if (theme === 'light') {
-    root.classList.remove('dark');
-  } else {
-    // auto
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    root.classList.toggle('dark', prefersDark);
-  }
+/** Fila de opción con toggle a la derecha */
+function ToggleRow({ title, desc, checked, onChange, id }) {
+  return (
+    <div className="toggle-row">
+      <label htmlFor={id} className="toggle-row__label" style={{ cursor: 'pointer' }}>
+        <span className="toggle-row__title">{title}</span>
+        {desc && <span className="toggle-row__desc">{desc}</span>}
+      </label>
+      <Toggle id={id} checked={checked} onChange={onChange} />
+    </div>
+  );
 }
 
-function applyFontSize(size) {
-  document.documentElement.style.setProperty('--base-font-size', `${size}px`);
-}
+const TABS = [
+  { id: 'account',       label: 'Cuenta',         icon: null },
+  { id: 'privacy',       label: 'Privacidad',      icon: null },
+  { id: 'notifications', label: 'Notificaciones',  icon: null },
+  { id: 'appearance',    label: 'Apariencia',      icon: null },
+];
 
 function Settings() {
   const { user } = useAuth();
@@ -35,148 +55,125 @@ function Settings() {
   const [message, setMessage] = useState('');
   const [apiError, setApiError] = useState('');
 
-  // ── Cuenta ──
-  const [nombre, setNombre] = useState(user?.nombre || '');
+  // Cuenta
+  const [nombre, setNombre]         = useState(user?.nombre || '');
   const [notifEmail, setNotifEmail] = useState(true);
 
-  // ── Privacidad ──
-  const [perfilPublico, setPerfilPublico] = useState(false);
-  const [mostrarConexion, setMostrarConexion] = useState(true);
-  const [permitirBusqueda, setPermitirBusqueda] = useState(true);
+  // Privacidad
+  const [perfilPublico, setPerfilPublico]         = useState(false);
+  const [mostrarConexion, setMostrarConexion]     = useState(true);
+  const [permitirBusqueda, setPermitirBusqueda]   = useState(true);
 
-  // ── Notificaciones ──
-  const [notifChat, setNotifChat] = useState(true);
+  // Notificaciones
+  const [notifChat, setNotifChat]                     = useState(true);
   const [notifActualizaciones, setNotifActualizaciones] = useState(false);
-  const [notifSeguridad, setNotifSeguridad] = useState(true);
+  const [notifSeguridad, setNotifSeguridad]           = useState(true);
 
-  // ── Apariencia ──
-  const [theme, setTheme] = useState('light');
-  const [fontSize, setFontSize] = useState(16);
+  // Apariencia
+  const [theme, setTheme]           = useState('light');
+  const [fontSize, setFontSize]     = useState(16);
   const [animaciones, setAnimaciones] = useState(true);
 
-  // Cargar preferencias guardadas al montar
   useEffect(() => {
-    const prefs = loadPrefs();
-    if (prefs.theme) { setTheme(prefs.theme); applyTheme(prefs.theme); }
-    if (prefs.fontSize) { setFontSize(prefs.fontSize); applyFontSize(prefs.fontSize); }
-    if (prefs.animaciones !== undefined) setAnimaciones(prefs.animaciones);
-    if (prefs.notifEmail !== undefined) setNotifEmail(prefs.notifEmail);
-    if (prefs.perfilPublico !== undefined) setPerfilPublico(prefs.perfilPublico);
-    if (prefs.mostrarConexion !== undefined) setMostrarConexion(prefs.mostrarConexion);
-    if (prefs.permitirBusqueda !== undefined) setPermitirBusqueda(prefs.permitirBusqueda);
-    if (prefs.notifChat !== undefined) setNotifChat(prefs.notifChat);
-    if (prefs.notifActualizaciones !== undefined) setNotifActualizaciones(prefs.notifActualizaciones);
-    if (prefs.notifSeguridad !== undefined) setNotifSeguridad(prefs.notifSeguridad);
+    const p = loadPrefs();
+    if (p.theme)             { setTheme(p.theme); applyTheme(p.theme); }
+    if (p.fontSize)          { setFontSize(p.fontSize); applyFontSize(p.fontSize); }
+    if (p.animaciones !== undefined)       setAnimaciones(p.animaciones);
+    if (p.notifEmail !== undefined)        setNotifEmail(p.notifEmail);
+    if (p.perfilPublico !== undefined)     setPerfilPublico(p.perfilPublico);
+    if (p.mostrarConexion !== undefined)   setMostrarConexion(p.mostrarConexion);
+    if (p.permitirBusqueda !== undefined)  setPermitirBusqueda(p.permitirBusqueda);
+    if (p.notifChat !== undefined)         setNotifChat(p.notifChat);
+    if (p.notifActualizaciones !== undefined) setNotifActualizaciones(p.notifActualizaciones);
+    if (p.notifSeguridad !== undefined)    setNotifSeguridad(p.notifSeguridad);
   }, []);
 
-  const showSuccess = (msg) => {
-    setMessage(msg);
-    setApiError('');
-    setTimeout(() => setMessage(''), 3000);
-  };
+  const ok  = (msg) => { setMessage(msg); setApiError(''); setTimeout(() => setMessage(''), 3000); };
+  const err = (msg) => { setApiError(msg); setMessage(''); };
+  const changeTab = (id) => { setActiveTab(id); setMessage(''); setApiError(''); };
 
-  // ── Guardar Cuenta ──
   const handleSaveAccount = async (e) => {
     e.preventDefault();
-    if (!nombre.trim()) { setApiError('El nombre no puede estar vacío.'); return; }
-    setLoading(true);
-    setApiError('');
+    if (!nombre.trim()) { err('El nombre no puede estar vacío.'); return; }
+    setLoading(true); setApiError('');
     try {
       await api.put(`/api/users/${user?.id}`, { nombre: nombre.trim() });
       savePrefs({ ...loadPrefs(), notifEmail });
-      showSuccess('Cuenta actualizada correctamente.');
-    } catch (err) {
-      setApiError(getApiError(err));
-    } finally {
-      setLoading(false);
-    }
+      ok('Cuenta actualizada correctamente.');
+    } catch (e2) { err(getApiError(e2)); }
+    finally { setLoading(false); }
   };
 
-  // ── Guardar Privacidad ──
   const handleSavePrivacy = (e) => {
     e.preventDefault();
     savePrefs({ ...loadPrefs(), perfilPublico, mostrarConexion, permitirBusqueda });
-    showSuccess('Preferencias de privacidad guardadas.');
+    ok('Privacidad guardada.');
   };
 
-  // ── Guardar Notificaciones ──
   const handleSaveNotifications = (e) => {
     e.preventDefault();
     savePrefs({ ...loadPrefs(), notifChat, notifActualizaciones, notifSeguridad });
-    showSuccess('Preferencias de notificaciones guardadas.');
+    ok('Notificaciones guardadas.');
   };
 
-  // ── Guardar Apariencia ──
   const handleSaveAppearance = (e) => {
     e.preventDefault();
-    applyTheme(theme);
-    applyFontSize(fontSize);
+    applyTheme(theme); applyFontSize(fontSize);
     savePrefs({ ...loadPrefs(), theme, fontSize, animaciones });
-    showSuccess('Apariencia aplicada y guardada.');
+    ok('Apariencia aplicada y guardada.');
   };
-
-  const tabs = [
-    { id: 'account',       label: 'Cuenta' },
-    { id: 'privacy',       label: 'Privacidad' },
-    { id: 'notifications', label: 'Notificaciones' },
-    { id: 'appearance',    label: 'Apariencia' },
-  ];
 
   return (
     <div className="settings-layout">
+
+      {/* ── SIDEBAR ── */}
       <aside className="settings-menu">
         <h3>Configuración</h3>
         <p>Gestiona tus preferencias y cuenta</p>
-        {tabs.map((tab) => (
+        {TABS.map((t) => (
           <button
-            key={tab.id}
-            className={`settings-menu-link ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => { setActiveTab(tab.id); setMessage(''); setApiError(''); }}
+            key={t.id}
+            className={`settings-menu-link${activeTab === t.id ? ' active' : ''}`}
+            onClick={() => changeTab(t.id)}
           >
-            {tab.label}
+            {t.label}
           </button>
         ))}
         <div className="settings-menu-note">
-          <p>Versión: 1.0.0</p>
-          <p>© 2025 ALEX. Todos los derechos reservados.</p>
+          <span>Versión 1.0.0</span>
+          <span>© 2025 ALEX</span>
         </div>
       </aside>
 
+      {/* ── CONTENIDO ── */}
       <div className="settings-content">
 
         {/* CUENTA */}
         {activeTab === 'account' && (
-          <section className="settings-section active">
+          <section className="settings-section">
             <h2>Configuración de Cuenta</h2>
-            <p>Actualiza tu información personal.</p>
+            <p>Actualiza tu información personal y preferencias de comunicación.</p>
             <form onSubmit={handleSaveAccount} className="settings-form">
               <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input id="email" type="email" value={user?.correo || user?.email || ''} readOnly />
-                <small style={{ color: 'var(--text-muted)' }}>El email no puede modificarse.</small>
+                <label htmlFor="s-email">Email</label>
+                <input id="s-email" type="email" value={user?.correo || user?.email || ''} readOnly />
+                <small style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)' }}>El email no puede modificarse desde aquí.</small>
               </div>
               <div className="form-group">
-                <label htmlFor="nombre">Nombre Completo</label>
-                <input
-                  id="nombre"
-                  type="text"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Tu nombre completo"
-                />
+                <label htmlFor="s-nombre">Nombre Completo</label>
+                <input id="s-nombre" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Tu nombre completo" />
               </div>
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input type="checkbox" className="toggle-switch" checked={notifEmail} onChange={(e) => setNotifEmail(e.target.checked)} />
-                  <span>Recibir notificaciones por email</span>
-                </label>
-              </div>
+              <ToggleRow
+                id="s-notifEmail"
+                title="Notificaciones por email"
+                desc="Recibe alertas y novedades en tu correo"
+                checked={notifEmail}
+                onChange={setNotifEmail}
+              />
               {apiError && <p className="error-box">{apiError}</p>}
-              {message && <p className="success-box">{message}</p>}
+              {message  && <p className="success-box">{message}</p>}
               <div className="settings-actions">
-                <button type="submit" className="btn-save" disabled={loading}>
-                  {loading ? 'Guardando...' : 'Guardar Cambios'}
-                </button>
+                <button type="submit" className="btn-save" disabled={loading}>{loading ? 'Guardando…' : 'Guardar Cambios'}</button>
               </div>
             </form>
           </section>
@@ -184,28 +181,13 @@ function Settings() {
 
         {/* PRIVACIDAD */}
         {activeTab === 'privacy' && (
-          <section className="settings-section active">
+          <section className="settings-section">
             <h2>Privacidad</h2>
-            <p>Controla cómo se utiliza tu información.</p>
+            <p>Controla cómo se comparte y utiliza tu información dentro de la plataforma.</p>
             <form onSubmit={handleSavePrivacy} className="settings-form">
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input type="checkbox" className="toggle-switch" checked={perfilPublico} onChange={(e) => setPerfilPublico(e.target.checked)} />
-                  <span>Perfil público</span>
-                </label>
-              </div>
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input type="checkbox" className="toggle-switch" checked={mostrarConexion} onChange={(e) => setMostrarConexion(e.target.checked)} />
-                  <span>Mostrar última conexión</span>
-                </label>
-              </div>
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input type="checkbox" className="toggle-switch" checked={permitirBusqueda} onChange={(e) => setPermitirBusqueda(e.target.checked)} />
-                  <span>Permitir búsqueda de perfil</span>
-                </label>
-              </div>
+              <ToggleRow id="s-pp"  title="Perfil público"         desc="Otros usuarios pueden ver tu perfil"          checked={perfilPublico}    onChange={setPerfilPublico} />
+              <ToggleRow id="s-mc"  title="Mostrar última conexión" desc="Muestra cuándo fue tu última actividad"        checked={mostrarConexion}  onChange={setMostrarConexion} />
+              <ToggleRow id="s-pb"  title="Permitir búsqueda"       desc="Tu perfil aparece en resultados de búsqueda" checked={permitirBusqueda} onChange={setPermitirBusqueda} />
               {message && <p className="success-box">{message}</p>}
               <div className="settings-actions">
                 <button type="submit" className="btn-save">Guardar Cambios</button>
@@ -216,28 +198,13 @@ function Settings() {
 
         {/* NOTIFICACIONES */}
         {activeTab === 'notifications' && (
-          <section className="settings-section active">
+          <section className="settings-section">
             <h2>Notificaciones</h2>
-            <p>Configura cuándo y cómo deseas recibir notificaciones.</p>
+            <p>Configura cuándo y cómo quieres recibir notificaciones dentro de la app.</p>
             <form onSubmit={handleSaveNotifications} className="settings-form">
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input type="checkbox" className="toggle-switch" checked={notifChat} onChange={(e) => setNotifChat(e.target.checked)} />
-                  <span>Notificaciones de chat</span>
-                </label>
-              </div>
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input type="checkbox" className="toggle-switch" checked={notifActualizaciones} onChange={(e) => setNotifActualizaciones(e.target.checked)} />
-                  <span>Notificaciones de actualizaciones</span>
-                </label>
-              </div>
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input type="checkbox" className="toggle-switch" checked={notifSeguridad} onChange={(e) => setNotifSeguridad(e.target.checked)} />
-                  <span>Notificaciones de seguridad</span>
-                </label>
-              </div>
+              <ToggleRow id="s-nc"  title="Notificaciones de chat"          desc="Alertas de nuevos mensajes en conversaciones"       checked={notifChat}          onChange={setNotifChat} />
+              <ToggleRow id="s-na"  title="Actualizaciones del sistema"     desc="Novedades y mejoras de la plataforma"                checked={notifActualizaciones} onChange={setNotifActualizaciones} />
+              <ToggleRow id="s-ns"  title="Alertas de seguridad"            desc="Avisos sobre acceso y actividad sospechosa"         checked={notifSeguridad}     onChange={setNotifSeguridad} />
               {message && <p className="success-box">{message}</p>}
               <div className="settings-actions">
                 <button type="submit" className="btn-save">Guardar Cambios</button>
@@ -248,40 +215,38 @@ function Settings() {
 
         {/* APARIENCIA */}
         {activeTab === 'appearance' && (
-          <section className="settings-section active">
+          <section className="settings-section">
             <h2>Apariencia</h2>
-            <p>Personaliza la apariencia de la aplicación.</p>
+            <p>Personaliza el aspecto visual de la aplicación según tus preferencias.</p>
             <form onSubmit={handleSaveAppearance} className="settings-form">
               <div className="form-group">
-                <label htmlFor="theme">Tema</label>
-                <select id="theme" className="settings-items" value={theme} onChange={(e) => setTheme(e.target.value)}>
+                <label htmlFor="s-theme">Tema de la interfaz</label>
+                <select id="s-theme" value={theme} onChange={(e) => setTheme(e.target.value)}>
                   <option value="light">Claro</option>
                   <option value="dark">Oscuro</option>
                   <option value="auto">Automático (sistema)</option>
                 </select>
               </div>
               <div className="form-group">
-                <label htmlFor="fontSize">
-                  Tamaño de fuente: <strong>{fontSize}px</strong>
+                <label htmlFor="s-fontSize">
+                  Tamaño de fuente &mdash; <strong>{fontSize}px</strong>
                 </label>
                 <input
-                  id="fontSize"
-                  type="range"
-                  min="12" max="20"
+                  id="s-fontSize" type="range" min="12" max="20" step="1"
                   value={fontSize}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    setFontSize(val);
-                    applyFontSize(val);
-                  }}
+                  onChange={(e) => { const v = Number(e.target.value); setFontSize(v); applyFontSize(v); }}
                 />
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:'var(--text-xs)', color:'var(--text-faint)', maxWidth:'480px' }}>
+                  <span>Pequeño (12px)</span><span>Grande (20px)</span>
+                </div>
               </div>
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <input type="checkbox" className="toggle-switch" checked={animaciones} onChange={(e) => setAnimaciones(e.target.checked)} />
-                  <span>Animaciones</span>
-                </label>
-              </div>
+              <ToggleRow
+                id="s-anim"
+                title="Animaciones"
+                desc="Transiciones y efectos visuales en la interfaz"
+                checked={animaciones}
+                onChange={setAnimaciones}
+              />
               {message && <p className="success-box">{message}</p>}
               <div className="settings-actions">
                 <button type="submit" className="btn-save">Aplicar y Guardar</button>

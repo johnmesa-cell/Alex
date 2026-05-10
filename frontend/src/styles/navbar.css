@@ -1,71 +1,85 @@
 /* ================================================
-   Navbar — User Avatar Dropdown Menu
+   Navbar — User Avatar + Dropdown Menu
    ================================================ */
 
-/* Contenedor relativo para posicionar el dropdown */
 .user-menu-wrap {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-/* Avatar — estilos base ya definidos en global/navbar;
-   aquí solo añadimos el anillo de foco y estado abierto */
+/* Avatar */
 .user-avatar {
   cursor: pointer;
   border: 2px solid transparent;
   transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
   outline: none;
+  /* Asegura que siempre tenga tamaño consistente */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #fff;
+  font-family: var(--font-body);
+  flex-shrink: 0;
 }
 .user-avatar:hover,
 .user-avatar:focus-visible {
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.20);
+  box-shadow: 0 0 0 3px rgba(15,118,110,0.20);
 }
 .user-avatar--open {
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.25);
-  transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(15,118,110,0.28);
+  transform: scale(1.06);
 }
 
-/* ── Dropdown panel ────────────────────────────── */
+/* ── Panel dropdown ────────────────────────────── */
 .user-menu {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 8px);
   right: 0;
-  min-width: 220px;
+  min-width: 240px;
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  z-index: 9999;
-  overflow: hidden;
-
-  /* Animación de entrada */
-  animation: menuFadeIn 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
+  /* z-index muy alto para quedar por encima de todo */
+  z-index: 99999;
+  overflow: visible;
+  /* Evita que se corte con overflow del parent */
+  pointer-events: all;
+  animation: umFadeIn 150ms cubic-bezier(0.16,1,0.3,1) both;
 }
 
-@keyframes menuFadeIn {
-  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+@keyframes umFadeIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
   to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 
-/* ── Cabecera del menú ─────────────────────────── */
+/* ── Cabecera ─────────────────────────────────── */
 .user-menu__header {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-4) var(--space-3);
+  gap: 10px;
+  padding: 14px 16px 12px;
+  background: var(--bg-alt);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  border-bottom: 1px solid var(--divider);
 }
 
 .user-menu__avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-full);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
@@ -76,71 +90,80 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  overflow: hidden;
+  min-width: 0;
+  flex: 1;
 }
 
 .user-menu__name {
-  font-size: var(--text-sm);
-  font-weight: 600;
+  font-size: 0.875rem;
+  font-weight: 700;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-family: var(--font-body);
+  line-height: 1.3;
 }
 
 .user-menu__email {
-  font-size: var(--text-xs);
+  font-size: 0.75rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-family: var(--font-body);
+  line-height: 1.3;
 }
 
 /* ── Divisor ───────────────────────────────────── */
 .user-menu__divider {
   border: none;
   border-top: 1px solid var(--divider);
-  margin: var(--space-1) 0;
+  margin: 4px 0;
 }
 
-/* ── Items del menú ────────────────────────────── */
+/* ── Items ────────────────────────────────────── */
 .user-menu__item {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 10px;
   width: 100%;
-  padding: var(--space-3) var(--space-4);
+  padding: 10px 16px;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: var(--text-sm);
+  font-size: 0.875rem;
   font-family: var(--font-body);
   color: var(--text);
   text-align: left;
   transition: background var(--transition), color var(--transition);
+  line-height: 1.4;
 }
 
 .user-menu__item:hover,
 .user-menu__item:focus-visible {
-  background: var(--bg-alt);
-  color: var(--brand);
+  background: var(--brand-light);
+  color: var(--brand-strong);
   outline: none;
 }
 
-.user-menu__icon {
-  font-size: 1rem;
+.user-menu__item svg {
   flex-shrink: 0;
-  line-height: 1;
+  opacity: 0.75;
 }
 
-/* ── Item de peligro (Cerrar sesión) ───────────── */
-.user-menu__item--danger {
-  color: #dc2626;
+.user-menu__item:hover svg,
+.user-menu__item:focus-visible svg {
+  opacity: 1;
 }
+
+/* ── Item peligro ─────────────────────────────── */
+.user-menu__item--danger { color: #dc2626; }
 .user-menu__item--danger:hover,
 .user-menu__item--danger:focus-visible {
   background: #fef2f2;
   color: #b91c1c;
 }
+
+/* Padding inferior del menú */
+.user-menu > *:last-child { margin-bottom: 6px; }
