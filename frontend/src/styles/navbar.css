@@ -1,6 +1,5 @@
 /* =============================================
    Navbar + Avatar Dropdown
-   Todos los estilos del header y menú de usuario
    ============================================= */
 
 /* ========== NAVBAR BASE ========== */
@@ -8,7 +7,7 @@
 .navbar {
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 200;
   height: var(--topbar-height);
   display: flex;
   align-items: center;
@@ -111,8 +110,6 @@
 .btn-nav.btn-primary {
   background: var(--brand);
   color: var(--text-inverse);
-  border: none;
-  border-radius: var(--radius-full);
 }
 
 .btn-nav.btn-primary:hover {
@@ -125,7 +122,6 @@
   background: var(--brand-light);
   color: var(--brand-strong);
   border: 1px solid var(--border-strong);
-  border-radius: var(--radius-full);
 }
 
 .btn-nav.btn-secondary:hover {
@@ -159,7 +155,6 @@
   outline: none;
   flex-shrink: 0;
   transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
-  /* background viene del inline style del componente */
 }
 
 .user-avatar:hover,
@@ -174,7 +169,7 @@
   transform: scale(1.06);
 }
 
-/* ========== PANEL DROPDOWN — position:fixed via JS ========== */
+/* ========== PANEL DROPDOWN — position:fixed, siempre encima de todo ========== */
 
 .user-menu {
   min-width: 256px;
@@ -182,6 +177,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
+  /* Mayor que chat-rail (80) y chat-side (80) */
   z-index: 99999;
   overflow: hidden;
   font-family: var(--font-body);
