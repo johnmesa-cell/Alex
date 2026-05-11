@@ -265,19 +265,22 @@
   box-sizing: border-box;
 }
 
-/* ── Fix: botón "Crear cuenta gratis" en modo invitado ──
-   Usamos a.btn-primary (NO button.btn-primary) para no afectar
-   el <button class="btn-primary"> "Subir archivo" del modo autenticado.
-   Sobreescribe el border-radius: var(--radius-full) global que
-   provoca el efecto de óvalo gigante con width 100%. */
+/* ── Botón "Crear cuenta gratis" — modo invitado ──
+   a.btn-primary para no tocar el <button> "Subir archivo" autenticado.
+   width: fit-content + align-self: center → botón compacto y centrado,
+   sin ocupar todo el ancho del panel lateral. */
 .chat-side a.btn-primary {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  align-self: stretch;
+  align-self: center;
+  width: fit-content;
+  padding: var(--space-2) var(--space-5);
+  font-size: var(--text-sm);
   border-radius: var(--radius-lg);
   text-align: center;
   box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .side-content { display: flex; flex-direction: column; gap: var(--space-3); }
