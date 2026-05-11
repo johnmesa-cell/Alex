@@ -7,6 +7,8 @@
 @import './navbar.css';
 @import './landing.css';
 @import './auth.css';
+@import './info-support.css';
+@import './pages-unified.css';
 @import './chat.css';
 @import './chat-guest.css';
 @import './dashboard.css';

@@ -131,8 +131,8 @@ function Home() {
               {/* Acciones rápidas */}
               <div className="landing-section-label">Acciones rápidas</div>
               <div className="landing-actions">
-                {ACCIONES.map((a) => (
-                  <Link key={a.label} to={a.to} className="landing-action-card fade-up">
+                {ACCIONES.map((a, idx) => (
+                  <Link key={a.label} to={a.to} className="landing-action-card fade-up" style={{ animationDelay: `${idx * 0.04}s` }}>
                     <span className="landing-action-icon">{a.icon}</span>
                     <div>
                       <p className="landing-action-title">{a.label}</p>
@@ -146,29 +146,45 @@ function Home() {
               <div className="landing-section-label" style={{ marginTop: 'var(--space-4)' }}>Última consulta</div>
               <div className="landing-last-chat fade-up">
                 {resumenLoading ? (
-                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Cargando…</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                    <div className="skeleton skeleton-text" style={{ height: '12px', width: '50%' }} />
+                    <div className="skeleton skeleton-text" style={{ height: '16px', width: '100%' }} />
+                    <div className="skeleton skeleton-text" style={{ height: '16px', width: '80%' }} />
+                  </div>
                 ) : ultimaConsulta ? (
                   <>
                     <div className="landing-last-chat__meta">
                       <span className="landing-last-chat__date">{formatFecha(ultimaConsulta.fecha_creacion)}</span>
                     </div>
                     <p className="landing-last-chat__resumen">{ultimaConsulta.asunto}</p>
-                    <Link to="/chat" className="btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-2) var(--space-4)' }}>Continuar →</Link>
+                    <Link to="/chat" className="btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-2) var(--space-4)', alignSelf: 'start' }}>Continuar →</Link>
                   </>
                 ) : (
-                  <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Aún no tienes consultas. <Link to="/chat">¡Inicia una ahora!</Link></p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', alignItems: 'center', justifyContent: 'center', minHeight: '80px', textAlign: 'center' }}>
+                    <span style={{ fontSize: '2rem' }}>📋</span>
+                    <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', margin: 0 }}>Sin consultas aún</p>
+                    <Link to="/chat" style={{ fontSize: 'var(--text-xs)', color: 'var(--brand)', fontWeight: 600 }}>Inicia una ahora →</Link>
+                  </div>
                 )}
               </div>
 
               {/* Estadísticas */}
               <div className="landing-section-label" style={{ marginTop: 'var(--space-4)' }}>Resumen de actividad</div>
               <div className="landing-stats">
-                {stats.map((s) => (
-                  <div key={s.label} className="landing-stat-card fade-up">
-                    <span className="landing-stat-value">{s.value}</span>
-                    <span className="landing-stat-label">{s.label}</span>
-                  </div>
-                ))}
+                {resumenLoading ? (
+                  <>
+                    <div className="landing-stat-card fade-up skeleton skeleton-kpi" />
+                    <div className="landing-stat-card fade-up skeleton skeleton-kpi" style={{ animationDelay: '0.04s' }} />
+                    <div className="landing-stat-card fade-up skeleton skeleton-kpi" style={{ animationDelay: '0.08s' }} />
+                  </>
+                ) : (
+                  stats.map((s) => (
+                    <div key={s.label} className="landing-stat-card fade-up">
+                      <span className="landing-stat-value">{s.value}</span>
+                      <span className="landing-stat-label">{s.label}</span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           ) : (
