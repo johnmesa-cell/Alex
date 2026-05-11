@@ -13,6 +13,7 @@
 @import './styles/animations.css';
 @import './styles/settings.css';
 @import './styles/profile.css';
+@import './styles/info-support.css';
 
 :root {
   --danger: #b42318;
