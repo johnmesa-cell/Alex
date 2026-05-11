@@ -236,23 +236,25 @@
   margin: 0;
 }
 
-/* ── Botón CTA dentro del sidebar invitado ── */
+/* ── Botón CTA dentro del sidebar invitado ──
+   Corrige el óvalo gigante que genera border-radius:9999px con width:100%.
+   Se usa border-radius normal y el botón se estira solo al ancho de su texto. */
 .chat-side .btn-primary {
+  align-self: stretch;           /* ocupa el ancho del flex-column del sidebar */
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-5);
   font-size: var(--text-sm);
   font-weight: 700;
-  text-align: center;
+  border-radius: var(--radius-lg);  /* radio normal — no el óvalo de 9999px */
   box-sizing: border-box;
-  /* Elimina cualquier transform heredado que achique el botón */
-  transform: none !important;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .chat-side .btn-primary:hover {
-  transform: translateY(-1px) !important;
+  transform: translateY(-1px);
 }
 
 /* ── Responsive ── */
