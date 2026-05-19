@@ -11,6 +11,7 @@ import { setFileRoutes } from "./routes/files.routes.js";
 import { setConsultasRoutes } from "./routes/consultas.routes.js";
 import { setMetricsRoutes } from "./routes/metrics.routes.js";
 import { setAgentRoutes } from "./routes/agent.routes.js";
+import { setAdminRoutes } from "./routes/admin.routes.js";
 
 dotenv.config();
 
@@ -61,7 +62,8 @@ setVoiceRoutes(app);
 setFileRoutes(app);
 setConsultasRoutes(app);
 setMetricsRoutes(app);
-setAgentRoutes(app); // Proxy hacia agente ALEX
+setAgentRoutes(app);
+setAdminRoutes(app);
 
 // CAMBIO CRÍTICO: Escuchar en '0.0.0.0' para aceptar conexiones externas
 app.listen(PORT, '0.0.0.0', () => {
