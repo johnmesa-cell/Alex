@@ -14,6 +14,7 @@
 @import './styles/settings.css';
 @import './styles/profile.css';
 @import './styles/info-support.css';
+@import './styles/admin.css';
 
 :root {
   --danger: #b42318;

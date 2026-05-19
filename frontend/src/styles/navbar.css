@@ -169,7 +169,7 @@
   transform: scale(1.06);
 }
 
-/* ========== PANEL DROPDOWN — position:fixed, siempre encima de todo ========== */
+/* ========== PANEL DROPDOWN ========== */
 
 .user-menu {
   min-width: 256px;
@@ -177,7 +177,6 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
-  /* Mayor que chat-rail (80) y chat-side (80) */
   z-index: 99999;
   overflow: hidden;
   font-family: var(--font-body);
@@ -239,6 +238,23 @@
   text-overflow: ellipsis;
 }
 
+/* ---- Badge de rol Administrador ---- */
+.user-menu__role-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 3px;
+  padding: 2px var(--space-2);
+  background: var(--brand-light);
+  color: var(--brand-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
 /* ========== DIVISOR ========== */
 
 .user-menu__divider {
@@ -283,6 +299,34 @@
 .user-menu__item:hover svg,
 .user-menu__item:focus-visible svg {
   color: var(--brand);
+}
+
+/* ========== ITEM ADMIN ========== */
+
+.user-menu__item--admin {
+  color: var(--brand-strong);
+  font-weight: 700;
+  background: var(--brand-light);
+  margin: var(--space-1) var(--space-2);
+  border-radius: var(--radius-lg);
+  width: calc(100% - var(--space-4));
+  border: 1px solid var(--border);
+}
+
+.user-menu__item--admin svg {
+  color: var(--brand);
+}
+
+.user-menu__item--admin:hover,
+.user-menu__item--admin:focus-visible {
+  background: var(--brand);
+  color: var(--text-inverse);
+  border-color: var(--brand);
+}
+
+.user-menu__item--admin:hover svg,
+.user-menu__item--admin:focus-visible svg {
+  color: var(--text-inverse);
 }
 
 /* ========== ITEM PELIGRO ========== */
