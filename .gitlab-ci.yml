@@ -74,9 +74,16 @@ deploy:
         git fetch origin
         git reset --hard origin/main
 
+        echo '--- Liberando espacio en disco (sin tocar datos) ---'
+        sudo docker stop alex_app alex_frontend || true
+        sudo docker rm alex_app alex_frontend || true
+        sudo docker image rm alex-backend:latest alex-frontend:latest || true
+        sudo docker image prune -f
+        sudo docker network prune -f
+
         echo '--- Reconstruyendo contenedores ---'
-        sudo docker compose --project-directory $PROJECT_DIR down
-        sudo docker compose --project-directory $PROJECT_DIR up --build -d
+        sudo docker compose --project-directory $PROJECT_DIR build --no-cache backend frontend
+        sudo docker compose --project-directory $PROJECT_DIR up -d
 
         echo '--- Estado de los contenedores DESPUÉS de los cambios ---'
         sudo docker compose --project-directory $PROJECT_DIR ps
