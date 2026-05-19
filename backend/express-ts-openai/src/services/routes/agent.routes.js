@@ -9,9 +9,13 @@ const AGENT_URL = process.env.AGENT_URL ?? 'http://alex_agent:3500';
 router.all('/admin*', requireAdmin, async (req, res) => {
   try {
     const agentPath = req.path;
+    const token = req.cookies?.alex_token ?? '';
     const fetchOptions = {
       method: req.method,
-      headers: { 'Content-Type': 'application/json' }
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     };
 
     if (['POST', 'PUT', 'PATCH'].includes(req.method)) {

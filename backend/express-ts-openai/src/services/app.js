@@ -3,7 +3,6 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
-import { setAIRoutes } from "./routes/ai.routes.js";
 import { setAuthRoutes } from "./routes/auth.routes.js";
 import { setFirstAidRoutes } from "./routes/firstaid.routes.js";
 import { setVoiceRoutes } from "./routes/voice.routes.js";
@@ -18,7 +17,6 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configurar carpeta de archivos estáticos para acceso público
 app.use('/uploads', express.static('uploads'));
 app.use('/temp_voice', express.static('temp_voice'));
 
@@ -55,7 +53,6 @@ app.get("/", (req, res) => {
     });
 });
 
-setAIRoutes(app);
 setAuthRoutes(app);
 setFirstAidRoutes(app);
 setVoiceRoutes(app);
@@ -65,7 +62,6 @@ setMetricsRoutes(app);
 setAgentRoutes(app);
 setAdminRoutes(app);
 
-// CAMBIO CRÍTICO: Escuchar en '0.0.0.0' para aceptar conexiones externas
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT} (Public Access)`);
     console.log("Allowed CORS origins:", allowedOrigins);
