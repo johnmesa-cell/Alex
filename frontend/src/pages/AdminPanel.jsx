@@ -390,11 +390,18 @@ function Consultas() {
 
 // ── PANEL DEL AGENTE ───────────────────────────────────────────────────────────
 function PanelAgente() {
+  const token = document.cookie
+    .split('; ')
+    .find(r => r.startsWith('alex_token='))
+    ?.split('=')[1];
+
+  const src = token ? `${AGENT_PANEL}?token=${token}` : AGENT_PANEL;
+
   return (
     <div className="adm-section adm-section--iframe fade-up">
       <div className="adm-section-header">
         <h2 className="adm-section-title">Panel del Agente ALEX</h2>
-        <a href={AGENT_PANEL} target="_blank" rel="noreferrer" className="btn-secondary">
+        <a href={src} target="_blank" rel="noreferrer" className="btn-secondary">
           Abrir en ventana nueva
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: 5 }}>
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -402,7 +409,7 @@ function PanelAgente() {
           </svg>
         </a>
       </div>
-      <iframe src={AGENT_PANEL} className="adm-agent-iframe" title="ALEX Agent Admin" />
+      <iframe src={src} className="adm-agent-iframe" title="ALEX Agent Admin" />
     </div>
   );
 }
