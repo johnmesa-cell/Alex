@@ -28,25 +28,26 @@ function fmt(dateStr) {
 
 // ── DASHBOARD ──────────────────────────────────────────────────────────────────
 function Dashboard() {
-  const [data, setData]     = useState(null);
-  const [error, setError]   = useState('');
+  const [data, setData]       = useState(null);
+  const [error, setError]     = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api.get('/admin/dashboard')
-      .then(r => setData(r.data.data))
+      .then(r => setData(r.data?.data ?? r.data ?? null))
       .catch(e => setError(getApiError(e)))
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="adm-loading"><span className="adm-spinner" />Cargando…</div>;
   if (error)   return <div className="adm-error">{error}</div>;
+  if (!data)   return <div className="adm-error">No se pudo cargar el resumen.</div>;
 
   const cards = [
-    { label: 'Usuarios totales',     value: data.totalUsuarios,    icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', color: 'teal' },
-    { label: 'Sesiones activas',     value: data.sesionesActivas,  icon: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', color: 'blue' },
-    { label: 'Consultas abiertas',   value: data.consultasAbiertas,icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', color: 'amber' },
-    { label: 'Reportes generados',   value: data.totalReportes,    icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6', color: 'purple' },
+    { label: 'Usuarios totales',   value: data.totalUsuarios    ?? 0, icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', color: 'teal' },
+    { label: 'Sesiones activas',   value: data.sesionesActivas  ?? 0, icon: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z', color: 'blue' },
+    { label: 'Consultas abiertas', value: data.consultasAbiertas ?? 0, icon: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', color: 'amber' },
+    { label: 'Reportes generados', value: data.totalReportes    ?? 0, icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6', color: 'purple' },
   ];
 
   return (
@@ -69,23 +70,24 @@ function Dashboard() {
 
 // ── USUARIOS ───────────────────────────────────────────────────────────────────
 function Usuarios() {
-  const [rows, setRows]         = useState([]);
-  const [total, setTotal]       = useState(0);
-  const [page, setPage]         = useState(1);
-  const [pages, setPages]       = useState(1);
-  const [search, setSearch]     = useState('');
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
-  const [toast, setToast]       = useState('');
+  const [rows, setRows]       = useState([]);
+  const [total, setTotal]     = useState(0);
+  const [page, setPage]       = useState(1);
+  const [pages, setPages]     = useState(1);
+  const [search, setSearch]   = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
+  const [toast, setToast]     = useState('');
 
   const load = useCallback((p = 1, q = search) => {
     setLoading(true);
     api.get('/admin/usuarios', { params: { page: p, search: q } })
       .then(r => {
-        setRows(r.data.data.usuarios);
-        setTotal(r.data.data.total);
-        setPage(r.data.data.page);
-        setPages(r.data.data.pages);
+        const d = r.data?.data ?? {};
+        setRows(d.usuarios ?? []);
+        setTotal(d.total   ?? 0);
+        setPage(d.page     ?? 1);
+        setPages(d.pages   ?? 1);
       })
       .catch(e => setError(getApiError(e)))
       .finally(() => setLoading(false));
@@ -93,10 +95,7 @@ function Usuarios() {
 
   useEffect(() => { load(1); }, []);
 
-  const handleSearch = e => {
-    e.preventDefault();
-    load(1, search);
-  };
+  const handleSearch = e => { e.preventDefault(); load(1, search); };
 
   const toggle = async (u) => {
     const nuevoEstado = u.estado === 'activo' ? 'inactivo' : 'activo';
@@ -105,9 +104,7 @@ function Usuarios() {
       setRows(prev => prev.map(r => r.id_usuario === u.id_usuario ? { ...r, estado: nuevoEstado } : r));
       setToast(`Usuario ${nuevoEstado === 'activo' ? 'activado' : 'desactivado'}`);
       setTimeout(() => setToast(''), 3000);
-    } catch (e) {
-      setError(getApiError(e));
-    }
+    } catch (e) { setError(getApiError(e)); }
   };
 
   return (
@@ -132,6 +129,9 @@ function Usuarios() {
                 </tr>
               </thead>
               <tbody>
+                {rows.length === 0 && (
+                  <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Sin resultados</td></tr>
+                )}
                 {rows.map(u => (
                   <tr key={u.id_usuario}>
                     <td>{u.id_usuario}</td>
@@ -155,7 +155,7 @@ function Usuarios() {
             </table>
           </div>
           <div className="adm-pagination">
-            <button disabled={page <= 1}    onClick={() => load(page - 1)} className="btn-secondary">← Anterior</button>
+            <button disabled={page <= 1}     onClick={() => load(page - 1)} className="btn-secondary">← Anterior</button>
             <span>Página {page} de {pages}</span>
             <button disabled={page >= pages} onClick={() => load(page + 1)} className="btn-secondary">Siguiente →</button>
           </div>
@@ -175,7 +175,7 @@ function Sesiones() {
   const load = () => {
     setLoading(true);
     api.get('/admin/sesiones')
-      .then(r => setRows(r.data.data))
+      .then(r => setRows(r.data?.data ?? []))
       .catch(e => setError(getApiError(e)))
       .finally(() => setLoading(false));
   };
@@ -206,7 +206,9 @@ function Sesiones() {
               <tr><th>Usuario</th><th>Correo</th><th>IP</th><th>Inicio</th><th>Última actividad</th><th>Expira</th><th>Acción</th></tr>
             </thead>
             <tbody>
-              {rows.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No hay sesiones activas</td></tr>}
+              {rows.length === 0 && (
+                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No hay sesiones activas</td></tr>
+              )}
               {rows.map(s => (
                 <tr key={s.id_sesion}>
                   <td>{s.usuario?.nombre ?? '—'}</td>
@@ -228,19 +230,20 @@ function Sesiones() {
 
 // ── AUDITORÍA ──────────────────────────────────────────────────────────────────
 function Auditoria() {
-  const [rows, setRows]     = useState([]);
-  const [page, setPage]     = useState(1);
-  const [pages, setPages]   = useState(1);
+  const [rows, setRows]       = useState([]);
+  const [page, setPage]       = useState(1);
+  const [pages, setPages]     = useState(1);
   const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState('');
+  const [error, setError]     = useState('');
 
   const load = (p = 1) => {
     setLoading(true);
     api.get('/admin/auditoria', { params: { page: p } })
       .then(r => {
-        setRows(r.data.data.eventos);
-        setPage(r.data.data.page);
-        setPages(r.data.data.pages);
+        const d = r.data?.data ?? {};
+        setRows(d.eventos ?? []);
+        setPage(d.page    ?? 1);
+        setPages(d.pages  ?? 1);
       })
       .catch(e => setError(getApiError(e)))
       .finally(() => setLoading(false));
@@ -260,7 +263,9 @@ function Auditoria() {
                 <tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Tabla</th><th>Valor anterior</th><th>Valor nuevo</th><th>IP</th></tr>
               </thead>
               <tbody>
-                {rows.length === 0 && <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Sin registros</td></tr>}
+                {rows.length === 0 && (
+                  <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Sin registros</td></tr>
+                )}
                 {rows.map(e => (
                   <tr key={e.id_evento}>
                     <td>{fmt(e.timestamp)}</td>
@@ -276,7 +281,7 @@ function Auditoria() {
             </table>
           </div>
           <div className="adm-pagination">
-            <button disabled={page <= 1}    onClick={() => load(page - 1)} className="btn-secondary">← Anterior</button>
+            <button disabled={page <= 1}     onClick={() => load(page - 1)} className="btn-secondary">← Anterior</button>
             <span>Página {page} de {pages}</span>
             <button disabled={page >= pages} onClick={() => load(page + 1)} className="btn-secondary">Siguiente →</button>
           </div>
@@ -288,23 +293,24 @@ function Auditoria() {
 
 // ── CONSULTAS ──────────────────────────────────────────────────────────────────
 function Consultas() {
-  const [rows, setRows]       = useState([]);
-  const [page, setPage]       = useState(1);
-  const [pages, setPages]     = useState(1);
-  const [total, setTotal]     = useState(0);
-  const [filtro, setFiltro]   = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const [rows, setRows]         = useState([]);
+  const [page, setPage]         = useState(1);
+  const [pages, setPages]       = useState(1);
+  const [total, setTotal]       = useState(0);
+  const [filtro, setFiltro]     = useState('');
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState('');
   const [selected, setSelected] = useState(null);
 
   const load = (p = 1, est = filtro) => {
     setLoading(true);
     api.get('/admin/consultas', { params: { page: p, estado: est } })
       .then(r => {
-        setRows(r.data.data.consultas);
-        setTotal(r.data.data.total);
-        setPage(r.data.data.page);
-        setPages(r.data.data.pages);
+        const d = r.data?.data ?? {};
+        setRows(d.consultas ?? []);
+        setTotal(d.total    ?? 0);
+        setPage(d.page      ?? 1);
+        setPages(d.pages    ?? 1);
       })
       .catch(e => setError(getApiError(e)))
       .finally(() => setLoading(false));
@@ -333,7 +339,9 @@ function Consultas() {
                 <tr><th>ID</th><th>Usuario</th><th>Asunto</th><th>Estado</th><th>Fecha</th><th>Ver</th></tr>
               </thead>
               <tbody>
-                {rows.length === 0 && <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Sin consultas</td></tr>}
+                {rows.length === 0 && (
+                  <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Sin consultas</td></tr>
+                )}
                 {rows.map(c => (
                   <tr key={c.id_consulta}>
                     <td>{c.id_consulta}</td>
@@ -348,7 +356,7 @@ function Consultas() {
             </table>
           </div>
           <div className="adm-pagination">
-            <button disabled={page <= 1}    onClick={() => load(page - 1)} className="btn-secondary">← Anterior</button>
+            <button disabled={page <= 1}     onClick={() => load(page - 1)} className="btn-secondary">← Anterior</button>
             <span>Página {page} de {pages}</span>
             <button disabled={page >= pages} onClick={() => load(page + 1)} className="btn-secondary">Siguiente →</button>
           </div>
@@ -401,7 +409,7 @@ function PanelAgente() {
 
 // ── LAYOUT PRINCIPAL ───────────────────────────────────────────────────────────
 export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab]     = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const sections = {
@@ -415,7 +423,6 @@ export default function AdminPanel() {
 
   return (
     <div className="adm-root">
-      {/* Sidebar */}
       <nav className={`adm-sidebar${sidebarOpen ? ' adm-sidebar--open' : ''}`}>
         <button className="adm-sidebar-toggle" onClick={() => setSidebarOpen(o => !o)} aria-label="Expandir sidebar">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -440,7 +447,6 @@ export default function AdminPanel() {
         ))}
       </nav>
 
-      {/* Contenido */}
       <main className="adm-main">
         <div className="adm-topbar">
           <span className="adm-topbar-title">
