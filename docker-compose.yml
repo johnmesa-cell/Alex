@@ -44,8 +44,10 @@ services:
       - ./backend/express-ts-openai/temp_voice:/app/temp_voice
     ports:
       - "3002:3000"
+    environment:
+      - AGENT_URL=http://alex_agent:3500
     env_file:
-      - ./backend/express-ts-openai/.env 
+      - ./backend/express-ts-openai/.env
     depends_on:
       db:
         condition: service_healthy
@@ -60,7 +62,6 @@ services:
       dockerfile: Dockerfile
     container_name: alex_frontend
     restart: always
-    # ESTO ES LO MÁS IMPORTANTE: Forzamos el host y el puerto
     command: npm run dev -- --host 0.0.0.0 --port 5173
     volumes:
       - ./frontend:/app
