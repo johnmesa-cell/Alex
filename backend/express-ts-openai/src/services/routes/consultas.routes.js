@@ -2,23 +2,27 @@ import { Router } from 'express';
 import { verifyToken } from '../../middlewares/auth.middleware.js';
 import { 
     createConsulta, 
-    getAllConsultas, 
+    getAllConsultas,
+    getResumenConsultas,
     getConsultaById, 
     deleteConsulta 
 } from '../controllers/consultas.controller.js';
 
 const router = Router();
 
-// ALEX-46: Crear consulta
+// POST /api/consultas
 router.post('/', verifyToken, createConsulta);
 
-// ALEX-47: Listar consultas del usuario logueado
+// GET /api/consultas/resumen  ← DEBE ir ANTES de /:id
+router.get('/resumen', verifyToken, getResumenConsultas);
+
+// GET /api/consultas
 router.get('/', verifyToken, getAllConsultas);
 
-// ALEX-48: Obtener una consulta por ID
+// GET /api/consultas/:id
 router.get('/:id', verifyToken, getConsultaById);
 
-// ALEX-49: Eliminar consulta
+// DELETE /api/consultas/:id
 router.delete('/:id', verifyToken, deleteConsulta);
 
 export function setConsultasRoutes(app) {

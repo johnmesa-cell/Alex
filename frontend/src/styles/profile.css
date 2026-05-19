@@ -1,0 +1,198 @@
+/* =============================================
+   Profile — Personalización del usuario
+   Mismo sistema de diseño que Settings
+   ============================================= */
+
+.profile-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-6);
+  min-height: calc(100dvh - var(--topbar-height));
+  height: calc(100dvh - var(--topbar-height));
+  width: 100%;
+  padding: var(--space-6) var(--space-8);
+  overflow: hidden;
+}
+
+/* ========== SIDEBAR ========== */
+
+.profile-sidebar {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ========== AVATAR PREVIEW ========== */
+
+.profile-avatar-wrapper {
+  text-align: center;
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--divider);
+}
+
+.profile-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-full);
+  color: var(--text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  margin: 0 auto var(--space-3);
+  box-shadow: var(--shadow-md);
+  transition: background var(--transition);
+}
+
+.profile-name {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--font-body);
+  margin-bottom: var(--space-1);
+}
+
+.profile-email {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+}
+
+.profile-status {
+  display: inline-block;
+  margin-top: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  background: var(--brand-light);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--brand);
+  font-family: var(--font-body);
+}
+
+/* ========== COLOR SWATCHES ========== */
+
+.profile-color-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.profile-color-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-family: var(--font-body);
+  margin: 0;
+}
+
+.profile-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.color-swatch:hover {
+  transform: scale(1.18);
+  box-shadow: var(--shadow-md);
+}
+
+.color-swatch.active {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--text);
+  transform: scale(1.1);
+}
+
+/* ========== CONTENIDO PRINCIPAL ========== */
+
+.profile-content {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding-right: var(--space-2);
+}
+
+.profile-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-sm);
+  animation: fadeUp 180ms ease both;
+}
+
+.profile-section h2 {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--font-display);
+  margin-bottom: var(--space-2);
+}
+
+/* Reutiliza .settings-form, .form-group, .btn-save, select de settings.css */
+
+/* ========== BADGE PERSONALIZADO ========== */
+
+.profile-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--space-2);
+  padding: 2px var(--space-2);
+  background: var(--brand-light);
+  color: var(--brand-strong);
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--font-body);
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 1024px) {
+  .profile-layout {
+    grid-template-columns: 230px 1fr;
+    padding: var(--space-5) var(--space-6);
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+    padding: var(--space-4);
+  }
+  .profile-sidebar { height: auto; }
+  .profile-content { overflow: visible; }
+}
+
+@media (max-width: 480px) {
+  .profile-layout { padding: var(--space-3); }
+  .profile-section { padding: var(--space-5); }
+}

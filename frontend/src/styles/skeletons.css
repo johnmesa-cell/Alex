@@ -1,0 +1,168 @@
+/* =============================================
+   Skeleton Loaders & Loading States — Fase 2
+   ============================================= */
+
+/* ========== SHIMMER ANIMATION ========== */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--border) 0%,
+    var(--divider) 50%,
+    var(--border) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ========== SKELETON VARIANTS ========== */
+
+.skeleton-text {
+  height: 1em;
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-heading {
+  height: 1.4em;
+  width: 40%;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-lg);
+}
+
+.skeleton-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+}
+
+.skeleton-card {
+  height: 120px;
+  border-radius: var(--radius-xl);
+}
+
+.skeleton-kpi {
+  height: 90px;
+  border-radius: var(--radius-xl);
+}
+
+.skeleton-message {
+  height: 60px;
+  border-radius: var(--radius-xl);
+  max-width: 70%;
+}
+
+.skeleton-message.user {
+  margin-left: auto;
+}
+
+/* ========== CHAT MESSAGE SKELETON ========== */
+
+.message-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 70%;
+}
+
+.message-skeleton.user {
+  align-self: flex-end;
+}
+
+.message-skeleton .skeleton-role {
+  height: 0.75em;
+  width: 40px;
+}
+
+.message-skeleton .skeleton-bubble {
+  height: 60px;
+  border-radius: var(--radius-xl);
+}
+
+/* ========== CARD SKELETON ========== */
+
+.card-skeleton {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5) var(--space-6);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.card-skeleton .skeleton-heading {
+  width: 50%;
+}
+
+.card-skeleton .skeleton-text:nth-child(2) {
+  width: 80%;
+}
+
+.card-skeleton .skeleton-text:nth-child(3) {
+  width: 60%;
+}
+
+/* ========== FORM SKELETON ========== */
+
+.form-skeleton {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.form-skeleton .skeleton-heading {
+  width: 100%;
+}
+
+.form-skeleton .skeleton-text {
+  height: 120px;
+  margin-bottom: var(--space-4);
+}
+
+.form-skeleton .skeleton-button {
+  height: 44px;
+  border-radius: var(--radius-full);
+  width: 100px;
+}
+
+/* ========== GRID SKELETON ========== */
+
+.grid-skeleton {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  gap: var(--space-4);
+}
+
+.grid-skeleton .skeleton-kpi {
+  width: 100%;
+}
+
+/* ========== PREFERES REDUCED MOTION ========== */
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: var(--border);
+  }
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 640px) {
+  .skeleton-message {
+    max-width: 92%;
+  }
+
+  .grid-skeleton {
+    grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr));
+  }
+}

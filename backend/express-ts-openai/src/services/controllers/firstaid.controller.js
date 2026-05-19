@@ -1,49 +1,47 @@
 import { ChromaClient } from "chromadb";
 import { pipeline } from '@xenova/transformers';
 import { getGeminiResponseWithContext } from "../gemini.service.js";
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 // --- CONFIGURACIÓN ---
 const CHROMA_COLLECTION_NAME = "first_aid_docs";
 const EMBEDDING_MODEL = "Xenova/all-MiniLM-L6-v2";
 
 // --- INICIALIZACIÓN (SINGLETON) ---
-// Usamos un patrón Singleton para cargar el modelo de embeddings una sola vez.
 let extractor;
 async function getExtractor() {
     if (!extractor) {
         console.log("Cargando modelo de embeddings para el controlador...");
-        // Usamos un pipeline de 'feature-extraction' que es el adecuado para obtener embeddings.
         extractor = await pipeline('feature-extraction', EMBEDDING_MODEL);
         console.log("Modelo de embeddings cargado.");
     }
     return extractor;
 }
-// Iniciar la carga del modelo en cuanto arranca el servidor.
 getExtractor();
 
 const chromaClient = new ChromaClient({ path: "http://localhost:8000" });
 
 // --- DICCIONARIO DE SEGURIDAD ---
-// Lista de palabras clave que activarán el filtro de seguridad.
 const FORBIDDEN_KEYWORDS = [
     'suicidio', 'suicidarme', 'matarme', 'autolesión', 'cortarme', 'hacerme daño',
     'asesinar', 'matar a alguien', 'herir a alguien', 'violencia', 'abuso', 'maltrato',
     'bomba', 'explosivo', 'terrorismo',
     'drogas ilegales', 'sobredosis', 'veneno',
     'pornografía', 'abuso sexual',
-    // Añadir más palabras o frases según sea necesario
 ];
 
-/**
- * Función para verificar si una pregunta contiene palabras prohibidas.
- * @param {string} question La pregunta del usuario.
- * @returns {boolean} True si la pregunta es inapropiada, false en caso contrario.
- */
 function isQuestionInappropriate(question) {
     const normalizedQuestion = question.toLowerCase().trim();
     return FORBIDDEN_KEYWORDS.some(keyword => normalizedQuestion.includes(keyword));
 }
 
+// Genera un asunto corto a partir de la pregunta (máx 200 chars)
+function buildAsunto(pregunta) {
+    const trimmed = pregunta.trim();
+    return trimmed.length <= 200 ? trimmed : trimmed.slice(0, 197) + '...';
+}
 
 // --- LÓGICA DEL CONTROLADOR ---
 export const askFirstAidQuestion = async (req, res) => {
@@ -53,14 +51,12 @@ export const askFirstAidQuestion = async (req, res) => {
         return res.status(400).json({ message: "El parámetro 'pregunta' es requerido y debe ser texto." });
     }
 
-    // <<< INICIO: FILTRO DE SEGURIDAD >>>
     if (isQuestionInappropriate(pregunta)) {
         console.warn(`Pregunta bloqueada por filtro de seguridad: "${pregunta}"`);
         return res.status(403).json({
             message: "Tu pregunta no puede ser procesada por motivos de seguridad. Si estás en una situación de emergencia o necesitas ayuda, por favor, contacta a las autoridades locales o a una línea de ayuda especializada."
         });
     }
-    // <<< FIN: FILTRO DE SEGURIDAD >>>
 
     try {
         console.log(`Recibida pregunta: "${pregunta}"`);
@@ -79,19 +75,38 @@ export const askFirstAidQuestion = async (req, res) => {
         });
         const results = await collection.query({
             queryEmbeddings: questionEmbedding.tolist(),
-            nResults: 5 // Pedimos los 5 fragmentos más relevantes
+            nResults: 5
         });
 
         // 4. Construir el contexto para Gemini
-        // Unimos los documentos encontrados en un solo bloque de texto.
         const context = results.documents[0].join("\n\n---\n\n");
-        console.log("Contexto encontrado:", context.substring(0, 200) + "..."); // Log para depuración
+        console.log("Contexto encontrado:", context.substring(0, 200) + "...");
 
         // 5. Llamar a Gemini con el contexto y la pregunta
         console.log("Enviando pregunta y contexto a Gemini...");
         const answer = await getGeminiResponseWithContext(pregunta, context);
 
-        // 6. Devolver la respuesta
+        // 6. Persistir en PostgreSQL si el usuario está autenticado
+        //    req.usuario viene del middleware verifyToken (ruta protegida)
+        if (req.usuario?.id_usuario) {
+            try {
+                await prisma.consulta.create({
+                    data: {
+                        id_usuario:   req.usuario.id_usuario,
+                        asunto:       buildAsunto(pregunta),
+                        mensaje:      pregunta,
+                        respuesta_ia: answer,
+                        estado:       'cerrada',
+                    }
+                });
+                console.log(`Consulta guardada en BD para usuario ${req.usuario.id_usuario}`);
+            } catch (dbErr) {
+                // No bloqueamos la respuesta al usuario si falla el guardado
+                console.error('Error al persistir consulta en BD:', dbErr);
+            }
+        }
+
+        // 7. Devolver la respuesta
         res.status(200).json({
             pregunta: pregunta,
             respuesta_ia: answer

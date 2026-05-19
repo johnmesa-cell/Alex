@@ -1,0 +1,353 @@
+/* =============================================
+   Settings — ocupa toda la pantalla disponible
+   ============================================= */
+
+/* El wrapper principal se estira hasta llenar
+   el espacio bajo el navbar sin restricciones */
+.settings-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: var(--space-6);
+  /* Usa todo el alto disponible */
+  min-height: calc(100dvh - var(--topbar-height));
+  height: calc(100dvh - var(--topbar-height));
+  /* Sin max-width — ocupa todo el ancho */
+  width: 100%;
+  padding: var(--space-6) var(--space-8);
+  overflow: hidden;
+}
+
+/* ========== SIDEBAR NAV ========== */
+
+.settings-menu {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5) var(--space-5);
+  box-shadow: var(--shadow-sm);
+  /* Sticky dentro del layout */
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.settings-menu h3 {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: var(--space-1);
+}
+
+.settings-menu > p {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+  line-height: 1.5;
+}
+
+.settings-menu-note {
+  border-top: 1px solid var(--divider);
+  padding-top: var(--space-3);
+  margin-top: auto;
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* ========== MENU LINKS ========== */
+
+.settings-menu-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: left;
+}
+
+.settings-menu-link:hover {
+  background: var(--bg-alt);
+  color: var(--brand);
+  border-color: var(--border);
+}
+
+.settings-menu-link.active {
+  background: var(--brand-light);
+  color: var(--brand-strong);
+  border-color: var(--brand);
+}
+
+/* ========== CONTENT AREA ========== */
+
+.settings-content {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding-right: var(--space-2); /* espacio para scrollbar */
+}
+
+.settings-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8) var(--space-8);
+  box-shadow: var(--shadow-sm);
+  animation: fadeUp 180ms ease both;
+}
+
+.settings-section h2 {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: var(--space-2);
+}
+
+.settings-section > p {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-6);
+  line-height: 1.6;
+}
+
+/* ========== FORM DENTRO DE SECTION ========== */
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.form-group > label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="range"],
+.form-group select {
+  width: 100%;
+  max-width: 480px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.form-group input[type="range"] {
+  padding: 0;
+  height: 6px;
+  cursor: pointer;
+  accent-color: var(--brand);
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="email"]:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(15,118,110,0.12);
+}
+
+.form-group input[readonly] {
+  background: var(--bg-alt);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* Select (tema) */
+.form-group select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a6158' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* ========== TOGGLE ROW — reemplaza checkbox roto ========== */
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  transition: background var(--transition);
+  gap: var(--space-4);
+}
+
+.toggle-row:hover {
+  background: var(--bg-alt);
+}
+
+.toggle-row__label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toggle-row__title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.toggle-row__desc {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+}
+
+/* El botón toggle visual (pill con círculo) */
+.toggle-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 48px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  background: var(--border-strong);
+  transition: background var(--transition);
+  flex-shrink: 0;
+  outline: none;
+}
+
+.toggle-btn[aria-checked="true"] {
+  background: var(--brand);
+}
+
+.toggle-btn::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  transition: left var(--transition);
+}
+
+.toggle-btn[aria-checked="true"]::after {
+  left: calc(100% - 23px);
+}
+
+.toggle-btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(15,118,110,0.25);
+}
+
+/* ========== ACCIONES ========== */
+
+.settings-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+
+.btn-save {
+  padding: var(--space-3) var(--space-8);
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.btn-save:hover:not(:disabled) {
+  background: var(--brand-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-cancel {
+  padding: var(--space-3) var(--space-6);
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.btn-cancel:hover { background: var(--bg-alt); }
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 1024px) {
+  .settings-layout {
+    grid-template-columns: 230px 1fr;
+    padding: var(--space-5) var(--space-6);
+    gap: var(--space-5);
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+    padding: var(--space-4);
+  }
+  .settings-menu {
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: var(--space-3);
+  }
+  .settings-menu h3,
+  .settings-menu > p,
+  .settings-menu-note { display: none; }
+  .settings-menu-link { flex: 1; min-width: 100px; text-align: center; padding: var(--space-2) var(--space-3); }
+  .settings-content { overflow: visible; }
+}
+
+@media (max-width: 480px) {
+  .settings-layout { padding: var(--space-3); gap: var(--space-3); }
+  .settings-section { padding: var(--space-5); }
+  .settings-section h2 { font-size: var(--text-base); }
+  .btn-save, .btn-cancel { flex: 1; }
+}

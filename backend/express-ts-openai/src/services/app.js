@@ -10,6 +10,7 @@ import { setVoiceRoutes } from "./routes/voice.routes.js";
 import { setFileRoutes } from "./routes/files.routes.js";
 import { setConsultasRoutes } from "./routes/consultas.routes.js";
 import { setMetricsRoutes } from "./routes/metrics.routes.js";
+import { setAgentRoutes } from "./routes/agent.routes.js";
 
 dotenv.config();
 
@@ -19,13 +20,6 @@ const PORT = process.env.PORT || 3000;
 // Configurar carpeta de archivos estáticos para acceso público
 app.use('/uploads', express.static('uploads'));
 app.use('/temp_voice', express.static('temp_voice'));
-
-const defaultOrigins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost",
-    "http://127.0.0.1"
-];
 
 const allowedOrigins = [
     process.env.FRONTEND_ORIGIN,
@@ -38,7 +32,6 @@ const allowedOrigins = [
 app.use(
     cors({
         origin: function (origin, callback) {
-            // Permitir peticiones sin origen (como Postman) o si está en la lista
             if (!origin || allowedOrigins.indexOf(origin) !== -1) {
                 callback(null, true);
             } else {
@@ -63,11 +56,12 @@ app.get("/", (req, res) => {
 
 setAIRoutes(app);
 setAuthRoutes(app);
-setFirstAidRoutes(app); // Añadir las nuevas rutas
-setVoiceRoutes(app); // Añadir las nuevas rutas de voz
-setFileRoutes(app); // Registrar las rutas de subida de archivos
-setConsultasRoutes(app); // Registrar las rutas de consultas médico-paciente
-setMetricsRoutes(app); // Registrar las rutas de métricas y resumen
+setFirstAidRoutes(app);
+setVoiceRoutes(app);
+setFileRoutes(app);
+setConsultasRoutes(app);
+setMetricsRoutes(app);
+setAgentRoutes(app); // Proxy hacia agente ALEX
 
 // CAMBIO CRÍTICO: Escuchar en '0.0.0.0' para aceptar conexiones externas
 app.listen(PORT, '0.0.0.0', () => {

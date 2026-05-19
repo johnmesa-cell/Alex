@@ -1,0 +1,72 @@
+/* =============================================
+   ALEX Design Tokens — Fase 1
+   Fuente de verdad: docs/mockup/
+   ============================================= */
+
+:root {
+  /* ========== Colores de marca ========== */
+  --brand:          #0f766e;
+  --brand-strong:   #115e59;
+  --brand-light:    #e6f4f2;
+  --accent:         #ff7f50;
+  --accent-hover:   #e06540;
+
+  /* ========== Texto ========== */
+  --text:           #17332c;
+  --text-muted:     #4a6158;
+  --text-faint:     #8aafa6;
+  --text-inverse:   #ffffff;
+
+  /* ========== Superficies ========== */
+  --bg:             #f8fcfa;
+  --bg-alt:         #edf5f2;
+  --card:           #ffffff;
+  --border:         #cee3db;
+  --border-strong:  #9dcfc5;
+  --divider:        #e2eeeb;
+
+  /* ========== Tipografías ========== */
+  --font-display:   'Fraunces', Georgia, serif;
+  --font-body:      'Space Grotesk', 'Helvetica Neue', sans-serif;
+
+  /* ========== Escala tipográfica fluida ========== */
+  --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
+  --text-sm:   clamp(0.875rem, 0.8rem  + 0.35vw, 1rem);
+  --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
+  --text-lg:   clamp(1.125rem, 1rem    + 0.75vw, 1.5rem);
+  --text-xl:   clamp(1.5rem,   1.2rem  + 1.25vw, 2.25rem);
+
+  /* ========== Espaciado (base 4px) ========== */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* ========== Border radius ========== */
+  --radius-sm:   0.375rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-xl:   1rem;
+  --radius-2xl:  1.5rem;
+  --radius-full: 9999px;
+
+  /* ========== Sombras ========== */
+  --shadow-sm: 0 1px 3px rgba(15, 118, 110, 0.08);
+  --shadow-md: 0 4px 12px rgba(15, 118, 110, 0.10);
+  --shadow-lg: 0 12px 32px rgba(15, 118, 110, 0.14);
+
+  /* ========== Transiciones ========== */
+  --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ========== Layout ========== */
+  --sidebar-collapsed: 72px;
+  --sidebar-expanded:  330px;
+  --topbar-height:     64px;
+  --content-max:       960px;
+}
