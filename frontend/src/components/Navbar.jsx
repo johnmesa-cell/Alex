@@ -56,6 +56,12 @@ const IcoLogout = () => (
     <line x1="21" y1="12" x2="9" y2="12"/>
   </svg>
 );
+const IcoShield = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+);
 
 function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -64,22 +70,19 @@ function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos]   = useState({ top: 0, right: 0 });
 
-  // Referencias para detectar clics fuera
   const avatarRef = useRef(null);
   const menuRef   = useRef(null);
 
-  /* ── Cierra sesión y redirige ── */
+  const isAdmin = user?.rolNombre === 'admin';
+
   const handleLogout = async () => {
     setMenuOpen(false);
     try {
       await logout();
-    } catch (_) {
-      // silenciar error de red al cerrar sesión
-    }
+    } catch (_) {}
     navigate('/', { replace: true });
   };
 
-  /* ── Navega a una ruta y cierra el panel ── */
   const goTo = useCallback((path) => {
     setMenuOpen(false);
     navigate(path);
@@ -89,7 +92,6 @@ function Navbar() {
   const initials  = getInitials(user?.nombre);
   const bgColor   = avatarColor(user?.nombre);
 
-  /* ── Calcula posición bajo el avatar ── */
   const openMenu = useCallback(() => {
     if (avatarRef.current) {
       const rect = avatarRef.current.getBoundingClientRect();
@@ -106,7 +108,6 @@ function Navbar() {
     else openMenu();
   }, [menuOpen, openMenu]);
 
-  /* ── Cierra al hacer click FUERA del avatar Y del panel ── */
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e) => {
@@ -114,21 +115,16 @@ function Navbar() {
       const clickedMenu   = menuRef.current?.contains(e.target);
       if (!clickedAvatar && !clickedMenu) setMenuOpen(false);
     };
-    // 'mousedown' con capture=false se ejecuta ANTES del click del botón hijo
-    // Para que el click del ítem gane, usamos 'mousedown' en el documento
-    // pero excluimos el propio panel — los ítems ya manejan su propio click.
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  /* ── Cierra con Escape ── */
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') setMenuOpen(false); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, []);
 
-  /* ── Recalcula posición al redimensionar ── */
   useEffect(() => {
     if (!menuOpen) return;
     const handler = () => openMenu();
@@ -153,7 +149,6 @@ function Navbar() {
       <div className="navbar-session">
         {isAuthenticated ? (
           <div className="user-menu-wrap">
-            {/* Botón avatar */}
             <button
               ref={avatarRef}
               type="button"
@@ -167,7 +162,6 @@ function Navbar() {
               {initials}
             </button>
 
-            {/* Panel desplegable */}
             {menuOpen && (
               <div
                 ref={menuRef}
@@ -180,7 +174,6 @@ function Navbar() {
                   left:  'auto',
                 }}
               >
-                {/* Cabecera */}
                 <div className="user-menu__header">
                   <div
                     className="user-menu__avatar"
@@ -192,10 +185,24 @@ function Navbar() {
                   <div className="user-menu__info">
                     <span className="user-menu__name">{user?.nombre || 'Usuario'}</span>
                     <span className="user-menu__email">{user?.correo || user?.email || ''}</span>
+                    {isAdmin && (
+                      <span className="user-menu__role-badge">Administrador</span>
+                    )}
                   </div>
                 </div>
 
                 <hr className="user-menu__divider" />
+
+                {isAdmin && (
+                  <button
+                    type="button"
+                    className="user-menu__item user-menu__item--admin"
+                    role="menuitem"
+                    onClick={() => goTo('/admin')}
+                  >
+                    <IcoShield /> Panel de Admin
+                  </button>
+                )}
 
                 <button
                   type="button"

@@ -39,10 +39,11 @@ function validatePassword(password) {
 
 function normalizeUserResponse(user) {
     return {
-        id: user.id_usuario,
-        nombre: user.nombre,
-        correo: user.correo,
-        idRol: user.id_rol,
+        id:            user.id_usuario,
+        nombre:        user.nombre,
+        correo:        user.correo,
+        idRol:         user.id_rol,
+        rolNombre:     user.roles?.nombre_rol || null,
         fechaRegistro: user.fecha_registro
     };
 }
@@ -53,19 +54,16 @@ class AuthController {
             const { nombre, email, correo, password } = req.body ?? {};
             const emailField = email || correo;
 
-            // Validar nombre
             const nombreValidation = validateNombre(nombre);
             if (!nombreValidation.isValid) {
                 return res.status(400).json({ success: false, message: nombreValidation.error, data: null });
             }
 
-            // Validar email
             const emailValidation = validateEmail(emailField);
             if (!emailValidation.isValid) {
                 return res.status(400).json({ success: false, message: emailValidation.error, data: null });
             }
 
-            // Validar contraseña
             const passwordValidation = validatePassword(password);
             if (!passwordValidation.isValid) {
                 return res.status(400).json({ success: false, message: passwordValidation.error, data: null });
@@ -73,7 +71,6 @@ class AuthController {
 
             const normalizedEmail = String(emailField).trim().toLowerCase();
 
-            // Verificar si el usuario existe
             const existingUser = await prisma.usuario.findUnique({
                 where: { correo: normalizedEmail },
             });
@@ -82,7 +79,6 @@ class AuthController {
                 return res.status(409).json({ success: false, message: "El correo ya se encuentra registrado.", data: null });
             }
 
-            // Buscar rol existente (no crear automáticamente)
             const defaultRole = await prisma.rol.findFirst({
                 where: { nombre_rol: "usuario" }
             });
@@ -100,13 +96,7 @@ class AuthController {
                     correo: normalizedEmail,
                     password_hash: passwordhash
                 },
-                select: {
-                    id_usuario: true,
-                    nombre: true,
-                    correo: true,
-                    id_rol: true,
-                    fecha_registro: true
-                }
+                include: { roles: true }
             });
 
             return res.status(201).json({
@@ -134,7 +124,6 @@ class AuthController {
                 return res.status(400).json({ success: false, message: 'Los campos "email" y "password" son requeridos.', data: null });
             }
 
-            // Validar formato email
             const emailValidation = validateEmail(emailField);
             if (!emailValidation.isValid) {
                 return res.status(400).json({ success: false, message: emailValidation.error, data: null });
@@ -142,16 +131,16 @@ class AuthController {
 
             const normalizedEmail = String(emailField).trim().toLowerCase();
 
-            // Buscar usuario
+            // Buscar usuario incluyendo el rol
             const user = await prisma.usuario.findUnique({
-                where: { correo: normalizedEmail }
+                where: { correo: normalizedEmail },
+                include: { roles: true }
             });
 
             if (!user) {
                 return res.status(401).json({ success: false, message: "Credenciales inválidas.", data: null });
             }
 
-            // Verificar contraseña
             const isPasswordValid = await bcrypt.compare(String(password), user.password_hash);
 
             if (!isPasswordValid) {
@@ -163,7 +152,6 @@ class AuthController {
                 where: { id_usuario: user.id_usuario }
             });
 
-            // Crear token JWT
             const expiresIn = "24h";
             const token = jwt.sign(
                 {
@@ -175,7 +163,6 @@ class AuthController {
                 { expiresIn }
             );
 
-            // Registrar sesión en BD
             const now = new Date();
             const fechaexpiracion = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
@@ -191,13 +178,11 @@ class AuthController {
                 }
             });
 
-            // Actualizar último login
             await prisma.usuario.update({
                 where: { id_usuario: user.id_usuario },
                 data: { ultimo_login: now }
             });
 
-            // Establecer cookie httpOnly con el token
             res.cookie('alex_token', token, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
@@ -208,7 +193,7 @@ class AuthController {
             return res.status(200).json({
                 success: true,
                 message: "Inicio de sesión exitoso.",
-                data: { 
+                data: {
                     user: normalizeUserResponse(user)
                 }
             });
@@ -230,30 +215,28 @@ class AuthController {
                 return res.status(401).json({ success: false, message: "No hay sesión activa", data: null });
             }
 
-            // Eliminar sesión de la BD
             await prisma.sesion.deleteMany({
                 where: { token }
             });
 
-            // Limpiar la cookie
-            res.clearCookie('alex_token', { 
-                httpOnly: true, 
-                secure: process.env.NODE_ENV === 'production', 
-                sameSite: 'strict' 
+            res.clearCookie('alex_token', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict'
             });
 
-            return res.status(200).json({ 
-                success: true, 
-                message: "Sesión cerrada correctamente.", 
-                data: null 
+            return res.status(200).json({
+                success: true,
+                message: "Sesión cerrada correctamente.",
+                data: null
             });
         } catch (error) {
             console.error("Error en logout:", error);
-            return res.status(500).json({ 
-                success: false, 
-                message: "Error al cerrar sesión.", 
-                data: null, 
-                details: error.message 
+            return res.status(500).json({
+                success: false,
+                message: "Error al cerrar sesión.",
+                data: null,
+                details: error.message
             });
         }
     }

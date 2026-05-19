@@ -8,10 +8,11 @@ const USER_KEY = 'alex_user';
 
 function normalizeUser(payload = {}) {
   return {
-    id: payload.id || payload.id_usuario || payload.idusuario || null,
-    nombre: payload.nombre || '',
-    correo: payload.correo || payload.email || '',
-    idRol: payload.idRol || payload.id_rol || payload.idrol || null,
+    id:            payload.id || payload.id_usuario || payload.idusuario || null,
+    nombre:        payload.nombre || '',
+    correo:        payload.correo || payload.email || '',
+    idRol:         payload.idRol || payload.id_rol || payload.idrol || null,
+    rolNombre:     payload.rolNombre || payload.rol_nombre || payload.nombreRol || null,
     fechaRegistro: payload.fechaRegistro || payload.fecha_registro || null
   };
 }
@@ -19,9 +20,7 @@ function normalizeUser(payload = {}) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const raw = localStorage.getItem(USER_KEY);
-    if (!raw) {
-      return null;
-    }
+    if (!raw) return null;
     try {
       return JSON.parse(raw);
     } catch {
