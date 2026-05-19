@@ -46,10 +46,12 @@ const IconSettings = () => (
 const WELCOME_AUTH  = 'Hola, soy ALEX. Describe la situación y te daré orientación inicial de primeros auxilios.';
 const WELCOME_GUEST = 'Hola, estás en modo invitado. Puedo darte orientación inicial, pero no guardaré historial de esta sesión.';
 
+// sessionId estable por pestaña para mantener contexto en el agente
+const TAB_SESSION_ID = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
 function Chat() {
   const { isAuthenticated, user } = useAuth();
 
-  // Mensajes — invitado: persiste en sessionStorage mientras la pestaña vive
   const [messages, setMessages] = useState(() => {
     if (!isAuthenticated) {
       try {
@@ -60,7 +62,6 @@ function Chat() {
     return [{ role: 'assistant', text: isAuthenticated ? WELCOME_AUTH : WELCOME_GUEST }];
   });
 
-  // Persiste mensajes de invitado en sessionStorage
   useEffect(() => {
     if (!isAuthenticated) {
       try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(messages)); } catch {}
@@ -83,7 +84,6 @@ function Chat() {
   const [fileSuccess, setFileSuccess] = useState('');
   const fileInputRef = useRef(null);
 
-  // Historial real desde la BD
   const [historial, setHistorial] = useState([]);
   const [historialLoading, setHistorialLoading] = useState(false);
   const [historialError, setHistorialError] = useState('');
@@ -121,8 +121,12 @@ function Chat() {
     setMessages((prev) => [...prev, { role: 'user', text: clean }]);
     setPrompt('');
     try {
-      const { data } = await api.post('/api/ai/guidance', { prompt: clean });
-      const answer = data?.data?.respuesta || 'No se recibió respuesta válida del servidor.';
+      const sessionId = isAuthenticated && user?.id_usuario
+        ? `chat-user-${user.id_usuario}`
+        : TAB_SESSION_ID;
+
+      const { data } = await api.post('/api/agent/chat', { message: clean, sessionId });
+      const answer = data?.reply || data?.data?.reply || 'No se recibió respuesta válida del servidor.';
       setMessages((prev) => [...prev, { role: 'assistant', text: answer }]);
       if (isAuthenticated) fetchHistorial();
     } catch (err) {
