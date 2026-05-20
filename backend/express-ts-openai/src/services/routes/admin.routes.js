@@ -1,4 +1,5 @@
 import express from 'express';
+import { verifyToken } from '../../middlewares/auth.middleware.js';
 import { requireAdmin } from '../../middlewares/admin.middleware.js';
 import {
   getDashboard,
@@ -12,6 +13,8 @@ import {
 
 const router = express.Router();
 
+// verifyToken debe correr ANTES de requireAdmin para que req.usuario exista
+router.use(verifyToken);
 router.use(requireAdmin);
 
 router.get('/dashboard',         getDashboard);
