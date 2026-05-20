@@ -33,6 +33,41 @@ export const verifyToken = (req, res, next) => {
   }
 };
 
+// CORRECCIÓN: Middleware opcional para rutas públicas que también admiten
+// usuarios autenticados (ej: /api/agent/chat en modo invitado).
+// Si hay token válido lo decodifica en req.usuario; si no, deja pasar igual.
+export const optionalToken = (req, res, next) => {
+  try {
+    let token = null;
+
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+
+    if (!token && req.cookies && req.cookies.alex_token) {
+      token = req.cookies.alex_token;
+    }
+
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, config.jwtSecret);
+        req.usuario = decoded;
+        req.token = token;
+      } catch {
+        // Token inválido o expirado: se ignora, la petición continúa como invitado
+        req.usuario = null;
+      }
+    } else {
+      req.usuario = null;
+    }
+
+    next();
+  } catch (error) {
+    next();
+  }
+};
+
 export const verifyRole = (rolesPermitidos = []) => {
   return (req, res, next) => {
     try {
@@ -49,4 +84,4 @@ export const verifyRole = (rolesPermitidos = []) => {
   };
 };
 
-export default { verifyToken, verifyRole };
+export default { verifyToken, optionalToken, verifyRole };

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAdmin } from '../../middlewares/admin.middleware.js';
-import { verifyToken } from '../../middlewares/auth.middleware.js';
+import { verifyToken, optionalToken } from '../../middlewares/auth.middleware.js';
 import { PrismaClient } from '@prisma/client';
 
 const router = Router();
@@ -39,7 +39,10 @@ router.all('/admin*', requireAdmin, async (req, res) => {
 });
 
 // ── Chat: proxy + persistencia en BD si el usuario está autenticado ─────
-router.post('/chat', verifyToken, async (req, res) => {
+// CORRECCIÓN: verifyToken reemplazado por optionalToken para permitir
+// consultas en modo invitado (sin cuenta). Si hay sesión activa, se guarda
+// la consulta en BD; si no, se responde igualmente sin persistir.
+router.post('/chat', optionalToken, async (req, res) => {
   try {
     const { message, sessionId } = req.body;
     if (!message || !sessionId) {
@@ -51,7 +54,7 @@ router.post('/chat', verifyToken, async (req, res) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sessionId,
-        userName: req.usuario?.nombre ?? 'usuario',
+        userName: req.usuario?.nombre ?? 'invitado',
         message
       })
     });
@@ -69,15 +72,14 @@ router.post('/chat', verifyToken, async (req, res) => {
       try {
         await prisma.consulta.create({
           data: {
-            id_usuario:   req.usuario.id_usuario,
-            asunto:       buildAsunto(message),
-            mensaje:      message,
+            id_usuario: req.usuario.id_usuario,
+            asunto: buildAsunto(message),
+            mensaje: message,
             respuesta_ia: reply,
-            estado:       'cerrada',
+            estado: 'cerrada',
           }
         });
       } catch (dbErr) {
-        // No bloqueamos la respuesta si falla el guardado
         console.error('Error al guardar consulta en BD:', dbErr);
       }
     }
