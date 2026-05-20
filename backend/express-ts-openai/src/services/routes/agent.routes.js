@@ -40,10 +40,10 @@ router.all('/admin*', requireAdmin, async (req, res) => {
   }
 });
 
-// ── Chat: proxy + persistencia en BD si el usuario está autenticado ─────
-// CORRECCIÓN: verifyToken reemplazado por optionalToken para permitir
-// consultas en modo invitado (sin cuenta). Si hay sesión activa, se guarda
-// la consulta en BD; si no, se responde igualmente sin persistir.
+// ── Chat: proxy + persistencia en BD si el usuario está autenticado ───────
+// optionalToken permite consultas en modo invitado (sin cuenta).
+// Si hay sesión activa, se guarda la consulta en BD; si no, se responde
+// igualmente sin persistir.
 router.post('/chat', optionalToken, async (req, res) => {
   try {
     const { message, sessionId } = req.body;
@@ -69,21 +69,24 @@ router.post('/chat', optionalToken, async (req, res) => {
     const data = await agentRes.json();
     const reply = data?.reply ?? '';
 
-    // Guardar en BD solo si hay usuario autenticado
+    // CORRECCIÓN: el campo JS es `fecha_creacion` (schema: @map("fechacreacion")).
+    // Antes se usaba `fechacreacion` (nombre de la columna SQL), lo que causaba
+    // PrismaClientValidationError silenciado en el catch → consulta nunca guardada
+    // → historial siempre vacío en el frontend.
+    // Se omite fecha_creacion del data object porque ya tiene @default(now()).
     if (req.usuario?.id_usuario) {
       try {
         await prisma.consulta.create({
           data: {
-            id_usuario: req.usuario.id_usuario,
-            asunto: buildAsunto(message),
-            mensaje: message,
+            id_usuario:   req.usuario.id_usuario,
+            asunto:       buildAsunto(message),
+            mensaje:      message,
             respuesta_ia: reply,
-            estado: 'cerrada',
-            fechacreacion: new Date()
+            estado:       'cerrada'
           }
         });
       } catch (dbErr) {
-        console.error('Error al guardar consulta en BD:', dbErr);
+        console.error('Error al guardar consulta en BD:', dbErr.message);
       }
     }
 
@@ -94,11 +97,11 @@ router.post('/chat', optionalToken, async (req, res) => {
   }
 });
 
-// ── Upload: documentos del usuario hacia el agente ─────────────────────
+// ── Upload: documentos del usuario hacia el agente ────────────────────
 router.post('/upload', verifyToken, upload.single('archivo'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No se recibió archivo (campo: archivo)' });
+      return res.status(400).json({ success: false, message: 'No se recibio archivo (campo: archivo)' });
     }
 
     const form = new FormData();
