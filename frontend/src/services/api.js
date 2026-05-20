@@ -1,10 +1,11 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  // baseURL es '/' para que las rutas como '/api/consultas' funcionen sin duplicar /api
+  baseURL: import.meta.env.VITE_API_URL || '/',
   timeout: 20000,
   headers: { 'Content-Type': 'application/json' },
-  withCredentials: true  // Enviar cookies automáticamente en cada request
+  withCredentials: true
 });
 
 let onTokenExpired = null;
@@ -13,7 +14,6 @@ export function setTokenExpiredCallback(callback) {
   onTokenExpired = callback;
 }
 
-// Interceptor de respuesta para manejar errores 401
 api.interceptors.response.use(
   (response) => response,
   (error) => {
