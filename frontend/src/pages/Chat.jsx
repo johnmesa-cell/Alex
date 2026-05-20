@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../context/AuthContext.jsx';
 import api, { getApiError } from '../services/api.js';
 
@@ -99,10 +100,7 @@ function Chat() {
   const [historialLoading, setHistorialLoading] = useState(false);
   const [historialError, setHistorialError]     = useState('');
 
-  // Estado para abrir consulta guardada
   const [loadingConsulta, setLoadingConsulta]   = useState(false);
-
-  // Estado para eliminar (guarda el id que se está borrando)
   const [deletingId, setDeletingId]             = useState(null);
 
   const fetchHistorial = async () => {
@@ -128,7 +126,6 @@ function Chat() {
     if (isAuthenticated) fetchHistorial();
   }, [isAuthenticated]); // eslint-disable-line
 
-  // Abre una consulta guardada y la reconstruye en el área de chat
   const handleAbrirConsulta = async (id) => {
     if (!id || loadingConsulta) return;
     setLoadingConsulta(true);
@@ -151,7 +148,6 @@ function Chat() {
     }
   };
 
-  // Elimina una consulta del historial
   const handleEliminarConsulta = async (e, id) => {
     e.stopPropagation();
     if (!id || deletingId) return;
@@ -364,7 +360,17 @@ function Chat() {
             {messages.map((msg, i) => (
               <article key={i} className={`message message-${msg.role}`}>
                 <p className="message-role">{msg.role === 'assistant' ? 'ALEX' : 'Tú'}</p>
-                <p>{msg.text}</p>
+                {msg.role === 'assistant'
+                  ? (
+                    // CORRECCIÓN: la IA devuelve Markdown. ReactMarkdown lo convierte
+                    // a HTML real: negritas, listas, encabezados, código, etc.
+                    // Los mensajes del usuario siguen siendo texto plano (<p>).
+                    <ReactMarkdown className="message-body">{msg.text}</ReactMarkdown>
+                  )
+                  : (
+                    <p className="message-body">{msg.text}</p>
+                  )
+                }
               </article>
             ))}
             {loading && (
