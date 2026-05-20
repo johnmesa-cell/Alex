@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { setTokenExpiredCallback } from '../services/api.js';
 
@@ -41,17 +41,17 @@ export function AuthProvider({ children }) {
     });
   }, []);
 
-  const saveSession = (nextUser) => {
+  const saveSession = useCallback((nextUser) => {
     setUser(nextUser);
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
-  };
+  }, []);
 
-  const clearSession = () => {
+  const clearSession = useCallback(() => {
     setUser(null);
     localStorage.removeItem(USER_KEY);
-  };
+  }, []);
 
-  const register = async (formData) => {
+  const register = useCallback(async (formData) => {
     // CORRECCIÓN: ruta corregida de '/auth/register' a '/api/auth/register'
     // para que el proxy de Vite (/api → backend) la alcance correctamente.
     const { data } = await api.post('/api/auth/register', formData);
@@ -59,9 +59,9 @@ export function AuthProvider({ children }) {
       message: data?.message || 'Registro completado',
       user: normalizeUser(data?.data?.user || {})
     };
-  };
+  }, []);
 
-  const login = async (credentials) => {
+  const login = useCallback(async (credentials) => {
     // CORRECCIÓN: ruta corregida de '/auth/login' a '/api/auth/login'
     const { data } = await api.post('/api/auth/login', credentials);
     const nextUser = normalizeUser(data?.data?.user || {});
@@ -70,16 +70,16 @@ export function AuthProvider({ children }) {
       message: data?.message || 'Sesion iniciada',
       user: nextUser
     };
-  };
+  }, [saveSession]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       // CORRECCIÓN: ruta corregida de '/auth/logout' a '/api/auth/logout'
       await api.post('/api/auth/logout');
     } finally {
       clearSession();
     }
-  };
+  }, [clearSession]);
 
   const value = useMemo(
     () => ({
@@ -89,7 +89,7 @@ export function AuthProvider({ children }) {
       login,
       logout
     }),
-    [user]
+    [user, register, login, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

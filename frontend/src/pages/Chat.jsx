@@ -46,9 +46,10 @@ const IconSettings = () => (
 const WELCOME_AUTH  = 'Hola, soy ALEX. Describe la situación y te daré orientación inicial de primeros auxilios.';
 const WELCOME_GUEST = 'Hola, estás en modo invitado. Puedo darte orientación inicial, pero no guardaré historial de esta sesión.';
 
-const TAB_SESSION_ID = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-
 function Chat() {
+  const TAB_SESSION_ID = useRef(
+    `chat-${Date.now()}-${(crypto.randomUUID?.() ?? Math.random().toString(36).slice(2))}`
+  ).current;
   const { isAuthenticated, user } = useAuth();
   const location = useLocation();
 
@@ -107,7 +108,12 @@ function Chat() {
     setHistorialError('');
     try {
       const { data } = await api.get('/api/consultas');
-      setHistorial(data?.data ?? []);
+      const normalizado = (data?.data ?? []).map(h => ({
+        id_consulta: h.id_consulta ?? h.id ?? null,
+        asunto: h.asunto ?? '(sin asunto)',
+        fecha_creacion: h.fecha_creacion ?? h.fechacreacion ?? null
+      }));
+      setHistorial(normalizado);
     } catch (err) {
       setHistorialError('No se pudo cargar el historial.');
     } finally {
@@ -139,8 +145,9 @@ function Chat() {
         : TAB_SESSION_ID;
 
       const { data } = await api.post('/api/agent/chat', { message: clean, sessionId });
-      const answer = data?.reply || data?.data?.reply || 'No se recibió respuesta válida del servidor.';
-      setMessages((prev) => [...prev, { role: 'assistant', text: answer }]);
+      const answer = data?.reply ?? data?.data?.reply ?? null;
+      if (!answer) console.warn('[Chat] Respuesta inesperada del agente:', JSON.stringify(data));
+      setMessages((prev) => [...prev, { role: 'assistant', text: answer ?? 'No se recibió respuesta válida del servidor.' }]);
       if (isAuthenticated) fetchHistorial();
     } catch (err) {
       setError(getApiError(err));
@@ -222,7 +229,7 @@ function Chat() {
 
               {activePanel === 'historial' && (
                 <>
-                  <button type="button" className="sidebar-new-btn" onClick={() => { setMessages([{ role: 'assistant', text: WELCOME_AUTH }]); setActivePanel(null); }}>+ Nueva consulta</button>
+                  <button type="button" className="sidebar-new-btn" onClick={() => { sessionStorage.removeItem(SESSION_KEY); setMessages([{ role: 'assistant', text: WELCOME_AUTH }]); setActivePanel(null); }}>+ Nueva consulta</button>
                   {historialLoading && <p style={{ padding: '12px', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Cargando historial…</p>}
                   {historialError  && <p style={{ padding: '12px', color: 'var(--color-error)', fontSize: 'var(--text-sm)' }}>{historialError}</p>}
                   {!historialLoading && !historialError && historial.length === 0 && (
@@ -230,8 +237,8 @@ function Chat() {
                   )}
                   {!historialLoading && historial.length > 0 && (
                     <ul className="historial-list">
-                      {historial.map((h) => (
-                        <li key={h.id_consulta} className="historial-item">
+                      {historial.map((h, i) => (
+                        <li key={h.id_consulta ?? i} className="historial-item">
                           <span className="historial-fecha">{formatFecha(h.fecha_creacion)}</span>
                           <span className="historial-resumen">{h.asunto}</span>
                         </li>

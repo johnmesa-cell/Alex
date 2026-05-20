@@ -1,11 +1,13 @@
 import { Router } from 'express';
+import multer from 'multer';
+import FormData from 'form-data';
 import { requireAdmin } from '../../middlewares/admin.middleware.js';
 import { verifyToken, optionalToken } from '../../middlewares/auth.middleware.js';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../prisma.client.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 const AGENT_URL = process.env.AGENT_URL ?? 'http://alex_agent:3500';
+const upload = multer({ storage: multer.memoryStorage() });
 
 function buildAsunto(mensaje) {
   const t = mensaje.trim();
@@ -77,6 +79,7 @@ router.post('/chat', optionalToken, async (req, res) => {
             mensaje: message,
             respuesta_ia: reply,
             estado: 'cerrada',
+            fechacreacion: new Date()
           }
         });
       } catch (dbErr) {
@@ -92,12 +95,22 @@ router.post('/chat', optionalToken, async (req, res) => {
 });
 
 // ── Upload: documentos del usuario hacia el agente ─────────────────────
-router.post('/upload', verifyToken, async (req, res) => {
+router.post('/upload', verifyToken, upload.single('archivo'), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No se recibió archivo (campo: archivo)' });
+    }
+
+    const form = new FormData();
+    form.append('archivo', req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype
+    });
+
     const response = await fetch(`${AGENT_URL}/upload`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body)
+      headers: form.getHeaders(),
+      body: form
     });
     const data = await response.json();
     return res.status(response.status).json(data);

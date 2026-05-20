@@ -3,6 +3,8 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
+import { fileURLToPath } from 'url';
+import path from 'path';
 import { setAuthRoutes } from "./routes/auth.routes.js";
 import { setFirstAidRoutes } from "./routes/firstaid.routes.js";
 import { setVoiceRoutes } from "./routes/voice.routes.js";
@@ -14,11 +16,12 @@ import { setAdminRoutes } from "./routes/admin.routes.js";
 
 dotenv.config();
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use('/uploads', express.static('uploads'));
-app.use('/temp_voice', express.static('temp_voice'));
+app.use('/uploads', express.static(path.join(__dirname, '../../../uploads')));
+app.use('/temp_voice', express.static(path.join(__dirname, '../../../temp_voice')));
 
 const allowedOrigins = [
     process.env.FRONTEND_ORIGIN,

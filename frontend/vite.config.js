@@ -25,6 +25,14 @@ export default defineConfig(({ mode }) => {
           // El frontend llama /api/agent/chat → el backend debe tener esa ruta completa.
           // Si el backend NO tiene el prefijo /api, descomenta la siguiente línea:
           // rewrite: (path) => path.replace(/^\/api/, '')
+        },
+        '/uploads': {
+          target: proxyTarget,
+          changeOrigin: true
+        },
+        '/temp_voice': {
+          target: proxyTarget,
+          changeOrigin: true
         }
       }
     }
