@@ -53,7 +53,6 @@ function Chat() {
   const { isAuthenticated, user } = useAuth();
   const location = useLocation();
 
-  // Detectar ?panel=historial en la URL para abrirlo automáticamente
   const initialPanel = useMemo(() => {
     const params = new URLSearchParams(location.search);
     const p = params.get('panel');
@@ -76,31 +75,35 @@ function Chat() {
     }
   }, [messages, isAuthenticated]);
 
-  const [prompt, setPrompt] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const messagesEndRef = useRef(null);
+  const [prompt, setPrompt]             = useState('');
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState('');
+  const messagesEndRef                  = useRef(null);
 
-  // Panel inicia con el valor del query param (o null)
-  const [activePanel, setActivePanel] = useState(initialPanel);
+  const [activePanel, setActivePanel]   = useState(initialPanel);
   const togglePanel = (panel) => setActivePanel((prev) => (prev === panel ? null : panel));
 
-  // Si cambia la URL (ej. navegación interna), sincronizar el panel
   useEffect(() => {
     if (initialPanel && isAuthenticated) setActivePanel(initialPanel);
   }, [initialPanel, isAuthenticated]);
 
-  const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef(null);
+  const [isListening, setIsListening]   = useState(false);
+  const recognitionRef                  = useRef(null);
 
   const [selectedFile, setSelectedFile] = useState(null);
-  const [fileError, setFileError] = useState('');
-  const [fileSuccess, setFileSuccess] = useState('');
-  const fileInputRef = useRef(null);
+  const [fileError, setFileError]       = useState('');
+  const [fileSuccess, setFileSuccess]   = useState('');
+  const fileInputRef                    = useRef(null);
 
-  const [historial, setHistorial] = useState([]);
+  const [historial, setHistorial]               = useState([]);
   const [historialLoading, setHistorialLoading] = useState(false);
-  const [historialError, setHistorialError] = useState('');
+  const [historialError, setHistorialError]     = useState('');
+
+  // Estado para abrir consulta guardada
+  const [loadingConsulta, setLoadingConsulta]   = useState(false);
+
+  // Estado para eliminar (guarda el id que se está borrando)
+  const [deletingId, setDeletingId]             = useState(null);
 
   const fetchHistorial = async () => {
     if (!isAuthenticated) return;
@@ -109,12 +112,12 @@ function Chat() {
     try {
       const { data } = await api.get('/api/consultas');
       const normalizado = (data?.data ?? []).map(h => ({
-        id_consulta: h.id_consulta ?? h.id ?? null,
-        asunto: h.asunto ?? '(sin asunto)',
+        id_consulta:    h.id_consulta ?? h.id ?? null,
+        asunto:         h.asunto ?? '(sin asunto)',
         fecha_creacion: h.fecha_creacion ?? h.fechacreacion ?? null
       }));
       setHistorial(normalizado);
-    } catch (err) {
+    } catch {
       setHistorialError('No se pudo cargar el historial.');
     } finally {
       setHistorialLoading(false);
@@ -124,6 +127,45 @@ function Chat() {
   useEffect(() => {
     if (isAuthenticated) fetchHistorial();
   }, [isAuthenticated]); // eslint-disable-line
+
+  // Abre una consulta guardada y la reconstruye en el área de chat
+  const handleAbrirConsulta = async (id) => {
+    if (!id || loadingConsulta) return;
+    setLoadingConsulta(true);
+    setError('');
+    try {
+      const { data } = await api.get(`/api/consultas/${id}`);
+      const c = data?.data;
+      if (!c) { setError('No se pudo cargar la consulta.'); return; }
+      setMessages([
+        { role: 'assistant', text: WELCOME_AUTH },
+        { role: 'user',      text: c.mensaje ?? c.asunto },
+        { role: 'assistant', text: c.respuesta_ia ?? '(sin respuesta guardada)' }
+      ]);
+      setActivePanel(null);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80);
+    } catch (err) {
+      setError(getApiError(err));
+    } finally {
+      setLoadingConsulta(false);
+    }
+  };
+
+  // Elimina una consulta del historial
+  const handleEliminarConsulta = async (e, id) => {
+    e.stopPropagation();
+    if (!id || deletingId) return;
+    if (!window.confirm('¿Eliminar esta consulta del historial?')) return;
+    setDeletingId(id);
+    try {
+      await api.delete(`/api/consultas/${id}`);
+      await fetchHistorial();
+    } catch (err) {
+      setError(getApiError(err));
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const speechEnabled = useMemo(
     () => typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window),
@@ -229,18 +271,56 @@ function Chat() {
 
               {activePanel === 'historial' && (
                 <>
-                  <button type="button" className="sidebar-new-btn" onClick={() => { sessionStorage.removeItem(SESSION_KEY); setMessages([{ role: 'assistant', text: WELCOME_AUTH }]); setActivePanel(null); }}>+ Nueva consulta</button>
-                  {historialLoading && <p style={{ padding: '12px', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Cargando historial…</p>}
-                  {historialError  && <p style={{ padding: '12px', color: 'var(--color-error)', fontSize: 'var(--text-sm)' }}>{historialError}</p>}
+                  <button
+                    type="button"
+                    className="sidebar-new-btn"
+                    onClick={() => {
+                      sessionStorage.removeItem(SESSION_KEY);
+                      setMessages([{ role: 'assistant', text: WELCOME_AUTH }]);
+                      setActivePanel(null);
+                    }}
+                  >
+                    + Nueva consulta
+                  </button>
+
+                  {historialLoading && (
+                    <p style={{ padding: '12px', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Cargando historial…</p>
+                  )}
+                  {historialError && (
+                    <p style={{ padding: '12px', color: 'var(--color-error)', fontSize: 'var(--text-sm)' }}>{historialError}</p>
+                  )}
                   {!historialLoading && !historialError && historial.length === 0 && (
                     <p style={{ padding: '12px', color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>Aún no tienes consultas guardadas.</p>
                   )}
+
                   {!historialLoading && historial.length > 0 && (
                     <ul className="historial-list">
                       {historial.map((h, i) => (
-                        <li key={h.id_consulta ?? i} className="historial-item">
-                          <span className="historial-fecha">{formatFecha(h.fecha_creacion)}</span>
-                          <span className="historial-resumen">{h.asunto}</span>
+                        <li
+                          key={h.id_consulta ?? i}
+                          className={`historial-item historial-item--clickable${loadingConsulta ? ' historial-item--disabled' : ''}`}
+                          onClick={() => handleAbrirConsulta(h.id_consulta)}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Abrir consulta: ${h.asunto}`}
+                          onKeyDown={(e) => e.key === 'Enter' && handleAbrirConsulta(h.id_consulta)}
+                        >
+                          <div className="historial-item__body">
+                            <span className="historial-fecha">{formatFecha(h.fecha_creacion)}</span>
+                            <span className="historial-resumen">
+                              {loadingConsulta ? '⏳ Cargando…' : h.asunto}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            className="historial-item__delete"
+                            aria-label="Eliminar consulta"
+                            disabled={deletingId === h.id_consulta}
+                            onClick={(e) => handleEliminarConsulta(e, h.id_consulta)}
+                            title="Eliminar"
+                          >
+                            {deletingId === h.id_consulta ? '⏳' : '×'}
+                          </button>
                         </li>
                       ))}
                     </ul>
