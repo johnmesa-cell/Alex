@@ -82,18 +82,17 @@ function HeroIllustration() {
 
 const ACCIONES = [
   { label: 'Nueva consulta', desc: 'Abre el chat y empieza a describir la situación.', icon: '💬', to: '/chat' },
-  // ← apunta a /chat?panel=historial para que el panel se abra automáticamente
-  { label: 'Ver historial', desc: 'Revisa tus consultas anteriores guardadas.', icon: '🕐', to: '/chat?panel=historial' },
-  { label: 'Configuración', desc: 'Ajusta tu perfil, seguridad y preferencias.', icon: '⚙️', to: '/settings' },
+  { label: 'Ver historial',  desc: 'Revisa tus consultas anteriores guardadas.',       icon: '🕐', to: '/chat?panel=historial' },
+  { label: 'Configuración', desc: 'Ajusta tu perfil, seguridad y preferencias.',       icon: '⚙️', to: '/settings' },
 ];
 
 function Home() {
   const { isAuthenticated, user } = useAuth();
   const primerNombre = getPrimerNombre(user?.nombre);
-  const initials = getInitials(user?.nombre);
-  const avatarColor = getAvatarColor(user?.nombre);
+  const initials     = getInitials(user?.nombre);
+  const avatarColor  = getAvatarColor(user?.nombre);
 
-  const [resumen, setResumen] = useState(null);
+  const [resumen, setResumen]             = useState(null);
   const [resumenLoading, setResumenLoading] = useState(false);
 
   useEffect(() => {
@@ -109,7 +108,10 @@ function Home() {
     ? [
         { label: 'Consultas realizadas', value: String(resumen.totalConsultas ?? 0) },
         { label: 'Archivos subidos',     value: String(resumen.archivosSubidos ?? 0) },
-        { label: 'Último acceso',        value: user?.ultimo_login ? formatFecha(user.ultimo_login) : 'Hoy' },
+        // CORRECCIÓN Bug 2: antes usaba user?.ultimo_login que no existía en el
+        // objeto normalizado de AuthContext → siempre mostraba 'Hoy'.
+        // Ahora lee user?.ultimoLogin (campo camelCase que sí mapea normalizeUser).
+        { label: 'Último acceso', value: user?.ultimoLogin ? formatFecha(user.ultimoLogin) : 'Hoy' },
       ]
     : [
         { label: 'Consultas realizadas', value: resumenLoading ? '…' : '0' },
@@ -138,7 +140,7 @@ function Home() {
                 ))}
               </div>
 
-              <div className="landing-section-label" style={{ marginTop: 'var(--space-4)' }}>Última consulta</div>
+              <div className="landing-section-label" style={{ marginTop: 'var(--space-4)' }}>ltima consulta</div>
               <div className="landing-last-chat fade-up">
                 {resumenLoading ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
@@ -193,7 +195,7 @@ function Home() {
               </div>
               <div className="landing-card fade-up" style={{ animationDelay: '120ms' }}>
                 <h3>Soporte</h3>
-                <p>Si tienes dudas escríbenos a{' '}<a href="mailto:soporte@alex-app.test">soporte@alex-app.test</a> o usa el canal de ayuda cuando inicies sesión.</p>
+                <p>Si tienes dudas eschíbenos a{' '}<a href="mailto:soporte@alex-app.test">soporte@alex-app.test</a> o usa el canal de ayuda cuando inicies sesión.</p>
               </div>
               <div className="landing-card fade-up" style={{ animationDelay: '180ms' }}>
                 <h3>Cómo funciona</h3>

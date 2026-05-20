@@ -8,15 +8,18 @@ const USER_KEY = 'alex_user';
 
 function normalizeUser(payload = {}) {
   return {
-    // CORRECCIÓN: se expone id_usuario además de id para que Chat.jsx y otros
-    // componentes que usan user.id_usuario funcionen correctamente.
+    // id e id_usuario: cubre todos los alias posibles del backend
     id:            payload.id || payload.id_usuario || payload.idusuario || null,
     id_usuario:    payload.id || payload.id_usuario || payload.idusuario || null,
     nombre:        payload.nombre || '',
     correo:        payload.correo || payload.email || '',
     idRol:         payload.idRol || payload.id_rol || payload.idrol || null,
     rolNombre:     payload.rolNombre || payload.rol_nombre || payload.nombreRol || null,
-    fechaRegistro: payload.fechaRegistro || payload.fecha_registro || null
+    fechaRegistro: payload.fechaRegistro || payload.fecha_registro || null,
+    // CORRECCIÓN Bug 2: ultimo_login no se mapeaba → Home.jsx siempre mostraba 'Hoy'.
+    // Se cubre el nombre snake_case que devuelve Prisma/el backend y el camelCase
+    // por si ya hubiese sesiones guardadas en localStorage con ese nombre.
+    ultimoLogin:   payload.ultimoLogin || payload.ultimo_login || payload.ultimologin || null,
   };
 }
 
@@ -26,8 +29,8 @@ export function AuthProvider({ children }) {
     if (!raw) return null;
     try {
       const parsed = JSON.parse(raw);
-      // CORRECCIÓN: re-normalizar al cargar para que sesiones guardadas
-      // antes de este fix también tengan id_usuario correctamente.
+      // Re-normalizar al cargar para que sesiones guardadas antes de este fix
+      // también tengan ultimoLogin correctamente.
       return normalizeUser(parsed);
     } catch {
       localStorage.removeItem(USER_KEY);
@@ -52,8 +55,6 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (formData) => {
-    // CORRECCIÓN: ruta corregida de '/auth/register' a '/api/auth/register'
-    // para que el proxy de Vite (/api → backend) la alcance correctamente.
     const { data } = await api.post('/api/auth/register', formData);
     return {
       message: data?.message || 'Registro completado',
@@ -62,7 +63,6 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (credentials) => {
-    // CORRECCIÓN: ruta corregida de '/auth/login' a '/api/auth/login'
     const { data } = await api.post('/api/auth/login', credentials);
     const nextUser = normalizeUser(data?.data?.user || {});
     saveSession(nextUser);
@@ -74,12 +74,21 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try {
-      // CORRECCIÓN: ruta corregida de '/auth/logout' a '/api/auth/logout'
       await api.post('/api/auth/logout');
     } finally {
       clearSession();
     }
   }, [clearSession]);
+
+  // Actualiza el nombre en el contexto y localStorage sin requerir re-login
+  const updateUser = useCallback((partial) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = normalizeUser({ ...prev, ...partial });
+      localStorage.setItem(USER_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -87,9 +96,10 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(user),
       register,
       login,
-      logout
+      logout,
+      updateUser,
     }),
-    [user, register, login, logout]
+    [user, register, login, logout, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
