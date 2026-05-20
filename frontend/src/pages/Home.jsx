@@ -108,9 +108,6 @@ function Home() {
     ? [
         { label: 'Consultas realizadas', value: String(resumen.totalConsultas ?? 0) },
         { label: 'Archivos subidos',     value: String(resumen.archivosSubidos ?? 0) },
-        // CORRECCIÓN Bug 2: antes usaba user?.ultimo_login que no existía en el
-        // objeto normalizado de AuthContext → siempre mostraba 'Hoy'.
-        // Ahora lee user?.ultimoLogin (campo camelCase que sí mapea normalizeUser).
         { label: 'Último acceso', value: user?.ultimoLogin ? formatFecha(user.ultimoLogin) : 'Hoy' },
       ]
     : [
@@ -140,7 +137,8 @@ function Home() {
                 ))}
               </div>
 
-              <div className="landing-section-label" style={{ marginTop: 'var(--space-4)' }}>ltima consulta</div>
+              {/* CORRECCIÓN: typo 'ltima consulta' → 'Última consulta' */}
+              <div className="landing-section-label" style={{ marginTop: 'var(--space-4)' }}>Última consulta</div>
               <div className="landing-last-chat fade-up">
                 {resumenLoading ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
@@ -195,7 +193,7 @@ function Home() {
               </div>
               <div className="landing-card fade-up" style={{ animationDelay: '120ms' }}>
                 <h3>Soporte</h3>
-                <p>Si tienes dudas eschíbenos a{' '}<a href="mailto:soporte@alex-app.test">soporte@alex-app.test</a> o usa el canal de ayuda cuando inicies sesión.</p>
+                <p>Si tienes dudas escríbenos a{' '}<a href="mailto:soporte@alex-app.test">soporte@alex-app.test</a> o usa el canal de ayuda cuando inicies sesión.</p>
               </div>
               <div className="landing-card fade-up" style={{ animationDelay: '180ms' }}>
                 <h3>Cómo funciona</h3>
