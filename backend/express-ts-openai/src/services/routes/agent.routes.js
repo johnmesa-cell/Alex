@@ -1,9 +1,16 @@
 import { Router } from 'express';
 import { requireAdmin } from '../../middlewares/admin.middleware.js';
 import { verifyToken } from '../../middlewares/auth.middleware.js';
+import { PrismaClient } from '@prisma/client';
 
 const router = Router();
+const prisma = new PrismaClient();
 const AGENT_URL = process.env.AGENT_URL ?? 'http://alex_agent:3500';
+
+function buildAsunto(mensaje) {
+  const t = mensaje.trim();
+  return t.length <= 200 ? t : t.slice(0, 197) + '...';
+}
 
 // ── Panel admin: proxy completo hacia /admin/* del agente ──────────────
 router.all('/admin*', requireAdmin, async (req, res) => {
@@ -31,7 +38,7 @@ router.all('/admin*', requireAdmin, async (req, res) => {
   }
 });
 
-// ── Chat: disponible para cualquier usuario autenticado ────────────────
+// ── Chat: proxy + persistencia en BD si el usuario está autenticado ─────
 router.post('/chat', verifyToken, async (req, res) => {
   try {
     const { message, sessionId } = req.body;
@@ -39,7 +46,7 @@ router.post('/chat', verifyToken, async (req, res) => {
       return res.status(400).json({ success: false, message: 'message y sessionId son requeridos' });
     }
 
-    const response = await fetch(`${AGENT_URL}/chat`, {
+    const agentRes = await fetch(`${AGENT_URL}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -49,8 +56,33 @@ router.post('/chat', verifyToken, async (req, res) => {
       })
     });
 
-    const data = await response.json();
-    return res.status(response.status).json(data);
+    if (!agentRes.ok) {
+      const errData = await agentRes.json().catch(() => ({}));
+      return res.status(agentRes.status).json(errData);
+    }
+
+    const data = await agentRes.json();
+    const reply = data?.reply ?? '';
+
+    // Guardar en BD solo si hay usuario autenticado
+    if (req.usuario?.id_usuario) {
+      try {
+        await prisma.consulta.create({
+          data: {
+            id_usuario:   req.usuario.id_usuario,
+            asunto:       buildAsunto(message),
+            mensaje:      message,
+            respuesta_ia: reply,
+            estado:       'cerrada',
+          }
+        });
+      } catch (dbErr) {
+        // No bloqueamos la respuesta si falla el guardado
+        console.error('Error al guardar consulta en BD:', dbErr);
+      }
+    }
+
+    return res.status(200).json(data);
   } catch (err) {
     console.error('Error proxy chat→agente:', err.message);
     return res.status(502).json({ success: false, message: 'Agente ALEX no disponible' });
