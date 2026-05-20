@@ -36,9 +36,13 @@ function validatePassword(password) {
     return { isValid: true, error: null };
 }
 
+// CORRECCIÓN: normalizeUserResponse ahora incluye id_usuario explícito y idRol
+// para que AuthContext.jsx lo resuelva sin depender del fallback por payload.id,
+// y para que admin.middleware.js encuentre idRol directamente en la respuesta.
 function normalizeUserResponse(user) {
     return {
         id:            user.id_usuario,
+        id_usuario:    user.id_usuario,
         nombre:        user.nombre,
         correo:        user.correo,
         idRol:         user.id_rol,
@@ -151,17 +155,17 @@ class AuthController {
 
             const expiresIn = "24h";
 
-            // CORRECCIÓN: Se agrega id_usuario explícitamente al payload del JWT.
-            // Antes solo existía 'sub', pero todos los controllers y middlewares
-            // leen req.usuario.id_usuario. Al incluirlo directamente se evita
-            // que el historial, consultas y guardado en BD fallen con undefined.
+            // CORRECCIÓN: payload incluye idRol además de roleId para que
+            // admin.middleware.js (que lee req.usuario.idRol) no reciba undefined.
+            // Se mantiene roleId por compatibilidad con verifyRole.
             const token = jwt.sign(
                 {
                     sub:        user.id_usuario,
                     id_usuario: user.id_usuario,
                     nombre:     user.nombre,
                     email:      user.correo,
-                    roleId:     user.id_rol
+                    roleId:     user.id_rol,
+                    idRol:      user.id_rol
                 },
                 config.jwtSecret,
                 { expiresIn }
