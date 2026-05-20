@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import api, { getApiError } from '../services/api.js';
 
@@ -46,11 +46,18 @@ const IconSettings = () => (
 const WELCOME_AUTH  = 'Hola, soy ALEX. Describe la situación y te daré orientación inicial de primeros auxilios.';
 const WELCOME_GUEST = 'Hola, estás en modo invitado. Puedo darte orientación inicial, pero no guardaré historial de esta sesión.';
 
-// sessionId estable por pestaña para mantener contexto en el agente
 const TAB_SESSION_ID = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
 function Chat() {
   const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
+
+  // Detectar ?panel=historial en la URL para abrirlo automáticamente
+  const initialPanel = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const p = params.get('panel');
+    return p === 'historial' || p === 'metricas' ? p : null;
+  }, [location.search]);
 
   const [messages, setMessages] = useState(() => {
     if (!isAuthenticated) {
@@ -73,8 +80,14 @@ function Chat() {
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
 
-  const [activePanel, setActivePanel] = useState(null);
+  // Panel inicia con el valor del query param (o null)
+  const [activePanel, setActivePanel] = useState(initialPanel);
   const togglePanel = (panel) => setActivePanel((prev) => (prev === panel ? null : panel));
+
+  // Si cambia la URL (ej. navegación interna), sincronizar el panel
+  useEffect(() => {
+    if (initialPanel && isAuthenticated) setActivePanel(initialPanel);
+  }, [initialPanel, isAuthenticated]);
 
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);

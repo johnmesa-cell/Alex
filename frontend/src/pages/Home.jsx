@@ -42,7 +42,6 @@ function formatFecha(iso) {
   return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-/* Ilustración SVG decorativa para la vista pública */
 function HeroIllustration() {
   return (
     <svg
@@ -83,7 +82,8 @@ function HeroIllustration() {
 
 const ACCIONES = [
   { label: 'Nueva consulta', desc: 'Abre el chat y empieza a describir la situación.', icon: '💬', to: '/chat' },
-  { label: 'Ver historial', desc: 'Revisa tus consultas anteriores guardadas.', icon: '🕐', to: '/chat' },
+  // ← apunta a /chat?panel=historial para que el panel se abra automáticamente
+  { label: 'Ver historial', desc: 'Revisa tus consultas anteriores guardadas.', icon: '🕐', to: '/chat?panel=historial' },
   { label: 'Configuración', desc: 'Ajusta tu perfil, seguridad y preferencias.', icon: '⚙️', to: '/settings' },
 ];
 
@@ -93,7 +93,6 @@ function Home() {
   const initials = getInitials(user?.nombre);
   const avatarColor = getAvatarColor(user?.nombre);
 
-  // ── Datos reales del resumen (solo cuando está autenticado) ──
   const [resumen, setResumen] = useState(null);
   const [resumenLoading, setResumenLoading] = useState(false);
 
@@ -122,13 +121,10 @@ function Home() {
 
   return (
     <div className="public-page">
-
-      {/* ── Hero principal ── */}
       <section className="landing-hero">
         <div className="landing-hero__left">
           {isAuthenticated ? (
             <div className="landing-auth-left">
-              {/* Acciones rápidas */}
               <div className="landing-section-label">Acciones rápidas</div>
               <div className="landing-actions">
                 {ACCIONES.map((a, idx) => (
@@ -142,7 +138,6 @@ function Home() {
                 ))}
               </div>
 
-              {/* Última consulta */}
               <div className="landing-section-label" style={{ marginTop: 'var(--space-4)' }}>Última consulta</div>
               <div className="landing-last-chat fade-up">
                 {resumenLoading ? (
@@ -157,7 +152,7 @@ function Home() {
                       <span className="landing-last-chat__date">{formatFecha(ultimaConsulta.fecha_creacion)}</span>
                     </div>
                     <p className="landing-last-chat__resumen">{ultimaConsulta.asunto}</p>
-                    <Link to="/chat" className="btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-2) var(--space-4)', alignSelf: 'start' }}>Continuar →</Link>
+                    <Link to="/chat?panel=historial" className="btn-secondary" style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-2) var(--space-4)', alignSelf: 'start' }}>Ver historial →</Link>
                   </>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', alignItems: 'center', justifyContent: 'center', minHeight: '80px', textAlign: 'center' }}>
@@ -168,7 +163,6 @@ function Home() {
                 )}
               </div>
 
-              {/* Estadísticas */}
               <div className="landing-section-label" style={{ marginTop: 'var(--space-4)' }}>Resumen de actividad</div>
               <div className="landing-stats">
                 {resumenLoading ? (
@@ -188,7 +182,6 @@ function Home() {
               </div>
             </div>
           ) : (
-            /* Vista pública: tarjetas informativas */
             <div className="landing-info-cards">
               <div className="landing-card fade-up">
                 <h3>Objetivo de ALEX</h3>
@@ -280,7 +273,6 @@ function Home() {
         </div>
       </section>
 
-      {/* ── CTA inferior ── */}
       <section className="landing-cta">
         <div className="landing-cta__text">
           {isAuthenticated ? (
