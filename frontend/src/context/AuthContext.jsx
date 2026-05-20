@@ -8,7 +8,10 @@ const USER_KEY = 'alex_user';
 
 function normalizeUser(payload = {}) {
   return {
+    // CORRECCIÓN: se expone id_usuario además de id para que Chat.jsx y otros
+    // componentes que usan user.id_usuario funcionen correctamente.
     id:            payload.id || payload.id_usuario || payload.idusuario || null,
+    id_usuario:    payload.id || payload.id_usuario || payload.idusuario || null,
     nombre:        payload.nombre || '',
     correo:        payload.correo || payload.email || '',
     idRol:         payload.idRol || payload.id_rol || payload.idrol || null,
@@ -22,7 +25,10 @@ export function AuthProvider({ children }) {
     const raw = localStorage.getItem(USER_KEY);
     if (!raw) return null;
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      // CORRECCIÓN: re-normalizar al cargar para que sesiones guardadas
+      // antes de este fix también tengan id_usuario correctamente.
+      return normalizeUser(parsed);
     } catch {
       localStorage.removeItem(USER_KEY);
       return null;
@@ -46,7 +52,9 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (formData) => {
-    const { data } = await api.post('/auth/register', formData);
+    // CORRECCIÓN: ruta corregida de '/auth/register' a '/api/auth/register'
+    // para que el proxy de Vite (/api → backend) la alcance correctamente.
+    const { data } = await api.post('/api/auth/register', formData);
     return {
       message: data?.message || 'Registro completado',
       user: normalizeUser(data?.data?.user || {})
@@ -54,7 +62,8 @@ export function AuthProvider({ children }) {
   };
 
   const login = async (credentials) => {
-    const { data } = await api.post('/auth/login', credentials);
+    // CORRECCIÓN: ruta corregida de '/auth/login' a '/api/auth/login'
+    const { data } = await api.post('/api/auth/login', credentials);
     const nextUser = normalizeUser(data?.data?.user || {});
     saveSession(nextUser);
     return {
@@ -65,7 +74,8 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await api.post('/auth/logout');
+      // CORRECCIÓN: ruta corregida de '/auth/logout' a '/api/auth/logout'
+      await api.post('/api/auth/logout');
     } finally {
       clearSession();
     }
