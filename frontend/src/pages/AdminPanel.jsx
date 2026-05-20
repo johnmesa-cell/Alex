@@ -387,10 +387,8 @@ function PanelAgente() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // CORRECCIÓN Bug 4: la ruta era /auth/token (sin prefijo /api)
-    // lo que daba 404 ya que el backend registra todas sus rutas bajo /api/*.
-    // Corregido a /api/auth/token que ahora existe en auth.routes.js.
-    api.get('/api/auth/token')
+    // FIX Bug 2: api ya tiene baseURL=.../api, usar '/auth/token' evita doble /api
+    api.get('/auth/token')
       .then(r => {
         const token = r.data?.token;
         setSrc(token ? `${AGENT_PANEL}?token=${token}` : AGENT_PANEL);
