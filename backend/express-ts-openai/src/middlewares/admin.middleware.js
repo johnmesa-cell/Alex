@@ -1,12 +1,13 @@
 export const requireAdmin = (req, res, next) => {
-  // Verificar que el usuario esté autenticado
+  // Verificar que el usuario esté autenticado (verifyToken debe correr antes)
   if (!req.usuario) {
     return res.status(401).json({ success: false, message: 'No autenticado' });
   }
 
-  // Verificar que el rol es admin (idRol = 1)
-  // Usar Number() para convertir string a número y evitar comparaciones falsas
-  if (Number(req.usuario.idRol) !== 1) {
+  // FIX Bug 3: el rol admin en BD es 2, no 1.
+  // Se revisan tanto idRol como roleId para cubrir tokens legacy y nuevos.
+  const rolId = Number(req.usuario.idRol ?? req.usuario.roleId);
+  if (rolId !== 2) {
     return res.status(403).json({ success: false, message: 'Acceso denegado: se requiere rol administrador' });
   }
 
