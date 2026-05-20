@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import { prisma } from "../prisma.client.js";
 import config from "../../config/index.js";
 
-// Funciones de validación
 function validateEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || typeof email !== 'string') return { isValid: false, error: 'El email debe ser un texto válido' };
@@ -37,9 +36,13 @@ function validatePassword(password) {
     return { isValid: true, error: null };
 }
 
+// CORRECCIÓN: normalizeUserResponse ahora incluye id_usuario explícito y idRol
+// para que AuthContext.jsx lo resuelva sin depender del fallback por payload.id,
+// y para que admin.middleware.js encuentre idRol directamente en la respuesta.
 function normalizeUserResponse(user) {
     return {
         id:            user.id_usuario,
+        id_usuario:    user.id_usuario,
         nombre:        user.nombre,
         correo:        user.correo,
         idRol:         user.id_rol,
@@ -131,7 +134,6 @@ class AuthController {
 
             const normalizedEmail = String(emailField).trim().toLowerCase();
 
-            // Buscar usuario incluyendo el rol
             const user = await prisma.usuario.findUnique({
                 where: { correo: normalizedEmail },
                 include: { roles: true }
@@ -147,17 +149,23 @@ class AuthController {
                 return res.status(401).json({ success: false, message: "Credenciales inválidas.", data: null });
             }
 
-            // Limpiar sesiones anteriores
             await prisma.sesion.deleteMany({
                 where: { id_usuario: user.id_usuario }
             });
 
             const expiresIn = "24h";
+
+            // CORRECCIÓN: payload incluye idRol además de roleId para que
+            // admin.middleware.js (que lee req.usuario.idRol) no reciba undefined.
+            // Se mantiene roleId por compatibilidad con verifyRole.
             const token = jwt.sign(
                 {
-                    sub: user.id_usuario,
-                    email: user.correo,
-                    roleId: user.id_rol
+                    sub:        user.id_usuario,
+                    id_usuario: user.id_usuario,
+                    nombre:     user.nombre,
+                    email:      user.correo,
+                    roleId:     user.id_rol,
+                    idRol:      user.id_rol
                 },
                 config.jwtSecret,
                 { expiresIn }
@@ -168,13 +176,13 @@ class AuthController {
 
             await prisma.sesion.create({
                 data: {
-                    id_usuario: user.id_usuario,
+                    id_usuario:       user.id_usuario,
                     token,
-                    fecha_inicio: now,
+                    fecha_inicio:     now,
                     ultima_actividad: now,
                     fecha_expiracion: fechaexpiracion,
-                    ip: req.ip,
-                    user_agent: req.get("user-agent")
+                    ip:               req.ip,
+                    user_agent:       req.get("user-agent")
                 }
             });
 
@@ -193,9 +201,7 @@ class AuthController {
             return res.status(200).json({
                 success: true,
                 message: "Inicio de sesión exitoso.",
-                data: {
-                    user: normalizeUserResponse(user)
-                }
+                data: { user: normalizeUserResponse(user) }
             });
         } catch (error) {
             console.error("Error en login:", error);

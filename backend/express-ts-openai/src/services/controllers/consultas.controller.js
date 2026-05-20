@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../prisma.client.js';
 
 // POST /api/consultas
 export const createConsulta = async (req, res) => {
@@ -35,10 +33,10 @@ export const getResumenConsultas = async (req, res) => {
                 where: { id_usuario },
                 orderBy: { fecha_creacion: 'desc' },
                 select: {
-                    id_consulta:   true,
-                    asunto:        true,
+                    id_consulta:    true,
+                    asunto:         true,
                     fecha_creacion: true,
-                    respuesta_ia:  true,
+                    respuesta_ia:   true,
                 }
             }),
             // Contamos registros del usuario (tabla registros = documentos/archivos)

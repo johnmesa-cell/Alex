@@ -82,18 +82,17 @@ function HeroIllustration() {
 
 const ACCIONES = [
   { label: 'Nueva consulta', desc: 'Abre el chat y empieza a describir la situación.', icon: '💬', to: '/chat' },
-  // ← apunta a /chat?panel=historial para que el panel se abra automáticamente
-  { label: 'Ver historial', desc: 'Revisa tus consultas anteriores guardadas.', icon: '🕐', to: '/chat?panel=historial' },
-  { label: 'Configuración', desc: 'Ajusta tu perfil, seguridad y preferencias.', icon: '⚙️', to: '/settings' },
+  { label: 'Ver historial',  desc: 'Revisa tus consultas anteriores guardadas.',       icon: '🕐', to: '/chat?panel=historial' },
+  { label: 'Configuración', desc: 'Ajusta tu perfil, seguridad y preferencias.',       icon: '⚙️', to: '/settings' },
 ];
 
 function Home() {
   const { isAuthenticated, user } = useAuth();
   const primerNombre = getPrimerNombre(user?.nombre);
-  const initials = getInitials(user?.nombre);
-  const avatarColor = getAvatarColor(user?.nombre);
+  const initials     = getInitials(user?.nombre);
+  const avatarColor  = getAvatarColor(user?.nombre);
 
-  const [resumen, setResumen] = useState(null);
+  const [resumen, setResumen]             = useState(null);
   const [resumenLoading, setResumenLoading] = useState(false);
 
   useEffect(() => {
@@ -109,7 +108,7 @@ function Home() {
     ? [
         { label: 'Consultas realizadas', value: String(resumen.totalConsultas ?? 0) },
         { label: 'Archivos subidos',     value: String(resumen.archivosSubidos ?? 0) },
-        { label: 'Último acceso',        value: user?.ultimo_login ? formatFecha(user.ultimo_login) : 'Hoy' },
+        { label: 'Último acceso', value: user?.ultimoLogin ? formatFecha(user.ultimoLogin) : 'Hoy' },
       ]
     : [
         { label: 'Consultas realizadas', value: resumenLoading ? '…' : '0' },
@@ -138,6 +137,7 @@ function Home() {
                 ))}
               </div>
 
+              {/* CORRECCIÓN: typo 'ltima consulta' → 'Última consulta' */}
               <div className="landing-section-label" style={{ marginTop: 'var(--space-4)' }}>Última consulta</div>
               <div className="landing-last-chat fade-up">
                 {resumenLoading ? (

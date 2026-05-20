@@ -14,7 +14,6 @@ function applyTheme(t) {
 }
 function applyFontSize(s) { document.documentElement.style.setProperty('--base-font-size', `${s}px`); }
 
-/** Botón toggle visual accesible: reemplaza <input type="checkbox"> */
 function Toggle({ checked, onChange, id }) {
   return (
     <button
@@ -28,7 +27,6 @@ function Toggle({ checked, onChange, id }) {
   );
 }
 
-/** Fila de opción con toggle a la derecha */
 function ToggleRow({ title, desc, checked, onChange, id }) {
   return (
     <div className="toggle-row">
@@ -42,50 +40,50 @@ function ToggleRow({ title, desc, checked, onChange, id }) {
 }
 
 const TABS = [
-  { id: 'account',       label: 'Cuenta',         icon: null },
-  { id: 'privacy',       label: 'Privacidad',      icon: null },
-  { id: 'notifications', label: 'Notificaciones',  icon: null },
-  { id: 'appearance',    label: 'Apariencia',      icon: null },
+  { id: 'account',       label: 'Cuenta',        icon: null },
+  { id: 'privacy',       label: 'Privacidad',     icon: null },
+  { id: 'notifications', label: 'Notificaciones', icon: null },
+  { id: 'appearance',    label: 'Apariencia',     icon: null },
 ];
 
 function Settings() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState('account');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [apiError, setApiError] = useState('');
+  const [loading, setLoading]     = useState(false);
+  const [message, setMessage]     = useState('');
+  const [apiError, setApiError]   = useState('');
 
   // Cuenta
   const [nombre, setNombre]         = useState(user?.nombre || '');
   const [notifEmail, setNotifEmail] = useState(true);
 
   // Privacidad
-  const [perfilPublico, setPerfilPublico]         = useState(false);
-  const [mostrarConexion, setMostrarConexion]     = useState(true);
-  const [permitirBusqueda, setPermitirBusqueda]   = useState(true);
+  const [perfilPublico, setPerfilPublico]       = useState(false);
+  const [mostrarConexion, setMostrarConexion]   = useState(true);
+  const [permitirBusqueda, setPermitirBusqueda] = useState(true);
 
   // Notificaciones
-  const [notifChat, setNotifChat]                     = useState(true);
+  const [notifChat, setNotifChat]                       = useState(true);
   const [notifActualizaciones, setNotifActualizaciones] = useState(false);
-  const [notifSeguridad, setNotifSeguridad]           = useState(true);
+  const [notifSeguridad, setNotifSeguridad]             = useState(true);
 
   // Apariencia
-  const [theme, setTheme]           = useState('light');
-  const [fontSize, setFontSize]     = useState(16);
+  const [theme, setTheme]         = useState('light');
+  const [fontSize, setFontSize]   = useState(16);
   const [animaciones, setAnimaciones] = useState(true);
 
   useEffect(() => {
     const p = loadPrefs();
-    if (p.theme)             { setTheme(p.theme); applyTheme(p.theme); }
-    if (p.fontSize)          { setFontSize(p.fontSize); applyFontSize(p.fontSize); }
-    if (p.animaciones !== undefined)       setAnimaciones(p.animaciones);
-    if (p.notifEmail !== undefined)        setNotifEmail(p.notifEmail);
-    if (p.perfilPublico !== undefined)     setPerfilPublico(p.perfilPublico);
-    if (p.mostrarConexion !== undefined)   setMostrarConexion(p.mostrarConexion);
-    if (p.permitirBusqueda !== undefined)  setPermitirBusqueda(p.permitirBusqueda);
-    if (p.notifChat !== undefined)         setNotifChat(p.notifChat);
+    if (p.theme)                            { setTheme(p.theme); applyTheme(p.theme); }
+    if (p.fontSize)                         { setFontSize(p.fontSize); applyFontSize(p.fontSize); }
+    if (p.animaciones !== undefined)        setAnimaciones(p.animaciones);
+    if (p.notifEmail !== undefined)         setNotifEmail(p.notifEmail);
+    if (p.perfilPublico !== undefined)      setPerfilPublico(p.perfilPublico);
+    if (p.mostrarConexion !== undefined)    setMostrarConexion(p.mostrarConexion);
+    if (p.permitirBusqueda !== undefined)   setPermitirBusqueda(p.permitirBusqueda);
+    if (p.notifChat !== undefined)          setNotifChat(p.notifChat);
     if (p.notifActualizaciones !== undefined) setNotifActualizaciones(p.notifActualizaciones);
-    if (p.notifSeguridad !== undefined)    setNotifSeguridad(p.notifSeguridad);
+    if (p.notifSeguridad !== undefined)     setNotifSeguridad(p.notifSeguridad);
   }, []);
 
   const ok  = (msg) => { setMessage(msg); setApiError(''); setTimeout(() => setMessage(''), 3000); };
@@ -97,8 +95,14 @@ function Settings() {
     if (!nombre.trim()) { err('El nombre no puede estar vacío.'); return; }
     setLoading(true); setApiError('');
     try {
-      await api.put(`/api/users/${user?.id}`, { nombre: nombre.trim() });
+      // CORRECCIÓN Bug 1: ruta corregida. Antes apuntaba a /api/users/:id
+      // que no existía en el backend → 404 silencioso.
+      // Ahora usa user?.id_usuario (nombre normalizado en AuthContext).
+      const { data } = await api.put(`/api/users/${user?.id_usuario}`, { nombre: nombre.trim() });
       savePrefs({ ...loadPrefs(), notifEmail });
+      // Actualizar el contexto en tiempo real para que Navbar/Home reflejen
+      // el nuevo nombre sin necesidad de recargar la página.
+      if (data?.data?.user) updateUser(data.data.user);
       ok('Cuenta actualizada correctamente.');
     } catch (e2) { err(getApiError(e2)); }
     finally { setLoading(false); }
@@ -126,7 +130,6 @@ function Settings() {
   return (
     <div className="settings-layout">
 
-      {/* ── SIDEBAR ── */}
       <aside className="settings-menu">
         <h3>Configuración</h3>
         <p>Gestiona tus preferencias y cuenta</p>
@@ -145,10 +148,8 @@ function Settings() {
         </div>
       </aside>
 
-      {/* ── CONTENIDO ── */}
       <div className="settings-content">
 
-        {/* CUENTA */}
         {activeTab === 'account' && (
           <section className="settings-section">
             <h2>Configuración de Cuenta</h2>
@@ -179,15 +180,14 @@ function Settings() {
           </section>
         )}
 
-        {/* PRIVACIDAD */}
         {activeTab === 'privacy' && (
           <section className="settings-section">
             <h2>Privacidad</h2>
             <p>Controla cómo se comparte y utiliza tu información dentro de la plataforma.</p>
             <form onSubmit={handleSavePrivacy} className="settings-form">
-              <ToggleRow id="s-pp"  title="Perfil público"         desc="Otros usuarios pueden ver tu perfil"          checked={perfilPublico}    onChange={setPerfilPublico} />
-              <ToggleRow id="s-mc"  title="Mostrar última conexión" desc="Muestra cuándo fue tu última actividad"        checked={mostrarConexion}  onChange={setMostrarConexion} />
-              <ToggleRow id="s-pb"  title="Permitir búsqueda"       desc="Tu perfil aparece en resultados de búsqueda" checked={permitirBusqueda} onChange={setPermitirBusqueda} />
+              <ToggleRow id="s-pp" title="Perfil público"         desc="Otros usuarios pueden ver tu perfil"          checked={perfilPublico}    onChange={setPerfilPublico} />
+              <ToggleRow id="s-mc" title="Mostrar última conexión" desc="Muestra cuándo fue tu última actividad"        checked={mostrarConexion}  onChange={setMostrarConexion} />
+              <ToggleRow id="s-pb" title="Permitir búsqueda"       desc="Tu perfil aparece en resultados de búsqueda" checked={permitirBusqueda} onChange={setPermitirBusqueda} />
               {message && <p className="success-box">{message}</p>}
               <div className="settings-actions">
                 <button type="submit" className="btn-save">Guardar Cambios</button>
@@ -196,15 +196,14 @@ function Settings() {
           </section>
         )}
 
-        {/* NOTIFICACIONES */}
         {activeTab === 'notifications' && (
           <section className="settings-section">
             <h2>Notificaciones</h2>
             <p>Configura cuándo y cómo quieres recibir notificaciones dentro de la app.</p>
             <form onSubmit={handleSaveNotifications} className="settings-form">
-              <ToggleRow id="s-nc"  title="Notificaciones de chat"          desc="Alertas de nuevos mensajes en conversaciones"       checked={notifChat}          onChange={setNotifChat} />
-              <ToggleRow id="s-na"  title="Actualizaciones del sistema"     desc="Novedades y mejoras de la plataforma"                checked={notifActualizaciones} onChange={setNotifActualizaciones} />
-              <ToggleRow id="s-ns"  title="Alertas de seguridad"            desc="Avisos sobre acceso y actividad sospechosa"         checked={notifSeguridad}     onChange={setNotifSeguridad} />
+              <ToggleRow id="s-nc" title="Notificaciones de chat"      desc="Alertas de nuevos mensajes en conversaciones"  checked={notifChat}           onChange={setNotifChat} />
+              <ToggleRow id="s-na" title="Actualizaciones del sistema" desc="Novedades y mejoras de la plataforma"           checked={notifActualizaciones} onChange={setNotifActualizaciones} />
+              <ToggleRow id="s-ns" title="Alertas de seguridad"        desc="Avisos sobre acceso y actividad sospechosa"    checked={notifSeguridad}      onChange={setNotifSeguridad} />
               {message && <p className="success-box">{message}</p>}
               <div className="settings-actions">
                 <button type="submit" className="btn-save">Guardar Cambios</button>
@@ -213,7 +212,6 @@ function Settings() {
           </section>
         )}
 
-        {/* APARIENCIA */}
         {activeTab === 'appearance' && (
           <section className="settings-section">
             <h2>Apariencia</h2>

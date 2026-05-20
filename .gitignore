@@ -4,3 +4,7 @@ node_modules/
 backend/express-ts-openai/data/
 backend/express-ts-openai/.env
 frontend/react-ts-openai/node_modules/
+# CORRECCIÓN: Ignorar build de producción y archivos de IDE
+frontend/dist/
+.idea/
+*.iml

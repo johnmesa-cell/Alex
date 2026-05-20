@@ -1,11 +1,13 @@
 import { Router } from 'express';
+import multer from 'multer';
+import FormData from 'form-data';
 import { requireAdmin } from '../../middlewares/admin.middleware.js';
-import { verifyToken } from '../../middlewares/auth.middleware.js';
-import { PrismaClient } from '@prisma/client';
+import { verifyToken, optionalToken } from '../../middlewares/auth.middleware.js';
+import { prisma } from '../prisma.client.js';
 
 const router = Router();
-const prisma = new PrismaClient();
 const AGENT_URL = process.env.AGENT_URL ?? 'http://alex_agent:3500';
+const upload = multer({ storage: multer.memoryStorage() });
 
 function buildAsunto(mensaje) {
   const t = mensaje.trim();
@@ -38,8 +40,11 @@ router.all('/admin*', requireAdmin, async (req, res) => {
   }
 });
 
-// ── Chat: proxy + persistencia en BD si el usuario está autenticado ─────
-router.post('/chat', verifyToken, async (req, res) => {
+// ── Chat: proxy + persistencia en BD si el usuario está autenticado ───────
+// optionalToken permite consultas en modo invitado (sin cuenta).
+// Si hay sesión activa, se guarda la consulta en BD; si no, se responde
+// igualmente sin persistir.
+router.post('/chat', optionalToken, async (req, res) => {
   try {
     const { message, sessionId } = req.body;
     if (!message || !sessionId) {
@@ -51,7 +56,7 @@ router.post('/chat', verifyToken, async (req, res) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sessionId,
-        userName: req.usuario?.nombre ?? 'usuario',
+        userName: req.usuario?.nombre ?? 'invitado',
         message
       })
     });
@@ -64,7 +69,11 @@ router.post('/chat', verifyToken, async (req, res) => {
     const data = await agentRes.json();
     const reply = data?.reply ?? '';
 
-    // Guardar en BD solo si hay usuario autenticado
+    // CORRECCIÓN: el campo JS es `fecha_creacion` (schema: @map("fechacreacion")).
+    // Antes se usaba `fechacreacion` (nombre de la columna SQL), lo que causaba
+    // PrismaClientValidationError silenciado en el catch → consulta nunca guardada
+    // → historial siempre vacío en el frontend.
+    // Se omite fecha_creacion del data object porque ya tiene @default(now()).
     if (req.usuario?.id_usuario) {
       try {
         await prisma.consulta.create({
@@ -73,12 +82,11 @@ router.post('/chat', verifyToken, async (req, res) => {
             asunto:       buildAsunto(message),
             mensaje:      message,
             respuesta_ia: reply,
-            estado:       'cerrada',
+            estado:       'cerrada'
           }
         });
       } catch (dbErr) {
-        // No bloqueamos la respuesta si falla el guardado
-        console.error('Error al guardar consulta en BD:', dbErr);
+        console.error('Error al guardar consulta en BD:', dbErr.message);
       }
     }
 
@@ -89,13 +97,23 @@ router.post('/chat', verifyToken, async (req, res) => {
   }
 });
 
-// ── Upload: documentos del usuario hacia el agente ─────────────────────
-router.post('/upload', verifyToken, async (req, res) => {
+// ── Upload: documentos del usuario hacia el agente ────────────────────
+router.post('/upload', verifyToken, upload.single('archivo'), async (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No se recibio archivo (campo: archivo)' });
+    }
+
+    const form = new FormData();
+    form.append('archivo', req.file.buffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype
+    });
+
     const response = await fetch(`${AGENT_URL}/upload`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req.body)
+      headers: form.getHeaders(),
+      body: form
     });
     const data = await response.json();
     return res.status(response.status).json(data);
