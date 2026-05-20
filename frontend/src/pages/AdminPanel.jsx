@@ -4,7 +4,6 @@ import '../styles/admin.css';
 
 const AGENT_PANEL = import.meta.env.VITE_AGENT_PANEL_URL ?? 'https://agent.megiddo20.me/admin';
 
-// ── Iconos inline ──────────────────────────────────────────────────────────────
 const Icon = ({ d, size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -26,7 +25,6 @@ function fmt(dateStr) {
   return new Date(dateStr).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
 }
 
-// ── DASHBOARD ──────────────────────────────────────────────────────────────────
 function Dashboard() {
   const [data, setData]       = useState(null);
   const [error, setError]     = useState('');
@@ -68,7 +66,6 @@ function Dashboard() {
   );
 }
 
-// ── USUARIOS ───────────────────────────────────────────────────────────────────
 function Usuarios() {
   const [rows, setRows]       = useState([]);
   const [total, setTotal]     = useState(0);
@@ -165,7 +162,6 @@ function Usuarios() {
   );
 }
 
-// ── SESIONES ───────────────────────────────────────────────────────────────────
 function Sesiones() {
   const [rows, setRows]       = useState([]);
   const [loading, setLoading] = useState(true);
@@ -228,7 +224,6 @@ function Sesiones() {
   );
 }
 
-// ── AUDITORÍA ──────────────────────────────────────────────────────────────────
 function Auditoria() {
   const [rows, setRows]       = useState([]);
   const [page, setPage]       = useState(1);
@@ -291,7 +286,6 @@ function Auditoria() {
   );
 }
 
-// ── CONSULTAS ──────────────────────────────────────────────────────────────────
 function Consultas() {
   const [rows, setRows]         = useState([]);
   const [page, setPage]         = useState(1);
@@ -388,13 +382,15 @@ function Consultas() {
   );
 }
 
-// ── PANEL DEL AGENTE ───────────────────────────────────────────────────────────
 function PanelAgente() {
-  const [src, setSrc] = useState(null);
+  const [src, setSrc]     = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api.get('/auth/token')
+    // CORRECCIÓN Bug 4: la ruta era /auth/token (sin prefijo /api)
+    // lo que daba 404 ya que el backend registra todas sus rutas bajo /api/*.
+    // Corregido a /api/auth/token que ahora existe en auth.routes.js.
+    api.get('/api/auth/token')
       .then(r => {
         const token = r.data?.token;
         setSrc(token ? `${AGENT_PANEL}?token=${token}` : AGENT_PANEL);
@@ -428,7 +424,6 @@ function PanelAgente() {
   );
 }
 
-// ── LAYOUT PRINCIPAL ───────────────────────────────────────────────────────────
 export default function AdminPanel() {
   const [activeTab, setActiveTab]     = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);

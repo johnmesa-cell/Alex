@@ -25,17 +25,12 @@ function loadProfilePrefs() { try { return JSON.parse(localStorage.getItem(PREF_
 function saveProfilePrefs(p) { localStorage.setItem(PREF_KEY, JSON.stringify(p)); }
 
 function Profile() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
-  // Nombre con el que ALEX le llama
   const [apodo,       setApodo]      = useState('');
-  // Color del avatar
   const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0].value);
-  // Idioma preferido de respuesta
   const [idioma,      setIdioma]     = useState('es');
-  // Nivel de detalle en respuestas
   const [detalle,     setDetalle]    = useState('normal');
-  // Nombre legal (de la cuenta)
   const [nombre,      setNombre]     = useState(user?.nombre || '');
 
   const [loading, setLoading] = useState(false);
@@ -54,11 +49,14 @@ function Profile() {
     e.preventDefault();
     setLoading(true); setErr(''); setMsg('');
     try {
-      // Guarda nombre legal en backend si cambió
       if (nombre.trim() && nombre.trim() !== user?.nombre) {
-        await api.put(`/api/users/${user?.id}`, { nombre: nombre.trim() });
+        // CORRECCIÓN Bug 3: user?.id puede ser undefined en sesiones normalizadas.
+        // Se usa user?.id_usuario que siempre está mapeado en AuthContext.normalizeUser.
+        const { data } = await api.put(`/api/users/${user?.id_usuario}`, { nombre: nombre.trim() });
+        // Actualiza el contexto en tiempo real para que Navbar y Home reflejen
+        // el nuevo nombre sin necesidad de recargar la página.
+        if (data?.data?.user) updateUser(data.data.user);
       }
-      // Guarda preferencias de personalización en localStorage
       saveProfilePrefs({ apodo, avatarColor, idioma, detalle });
       setMsg('Perfil personalizado guardado correctamente.');
       setTimeout(() => setMsg(''), 3000);
@@ -75,7 +73,6 @@ function Profile() {
   return (
     <div className="profile-layout">
 
-      {/* ── SIDEBAR con preview del avatar ── */}
       <aside className="profile-sidebar">
         <div className="profile-avatar-wrapper">
           <div
@@ -90,7 +87,6 @@ function Profile() {
           <div className="profile-status">Vista previa</div>
         </div>
 
-        {/* Selector de color de avatar */}
         <div className="profile-color-picker">
           <p className="profile-color-label">Color del avatar</p>
           <div className="profile-color-swatches">
@@ -109,9 +105,7 @@ function Profile() {
         </div>
       </aside>
 
-      {/* ── CONTENIDO principal ── */}
       <div className="profile-content">
-
         <section className="profile-section">
           <h2>Personaliza tu experiencia</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-6)', lineHeight: 1.6 }}>
@@ -120,7 +114,6 @@ function Profile() {
 
           <form onSubmit={handleSave} className="settings-form">
 
-            {/* Nombre legal */}
             <div className="form-group">
               <label htmlFor="p-nombre">Nombre completo (cuenta)</label>
               <input
@@ -133,7 +126,6 @@ function Profile() {
               <small style={{ color: 'var(--text-faint)', fontSize: 'var(--text-xs)' }}>Este es el nombre registrado en tu cuenta.</small>
             </div>
 
-            {/* Apodo — con énfasis */}
             <div className="form-group">
               <label htmlFor="p-apodo">
                 ¿Cómo quieres que ALEX te llame?
@@ -152,7 +144,6 @@ function Profile() {
               </small>
             </div>
 
-            {/* Idioma */}
             <div className="form-group">
               <label htmlFor="p-idioma">Idioma de respuesta preferido</label>
               <select id="p-idioma" value={idioma} onChange={(e) => setIdioma(e.target.value)}>
@@ -163,7 +154,6 @@ function Profile() {
               </select>
             </div>
 
-            {/* Nivel de detalle */}
             <div className="form-group">
               <label htmlFor="p-detalle">Nivel de detalle en respuestas</label>
               <select id="p-detalle" value={detalle} onChange={(e) => setDetalle(e.target.value)}>
@@ -183,7 +173,6 @@ function Profile() {
             </div>
           </form>
         </section>
-
       </div>
     </div>
   );
