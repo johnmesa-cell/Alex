@@ -67,10 +67,10 @@ export const updateUsuario = async (req, res) => {
       select: { id_usuario: true, nombre: true, correo: true, estado: true, id_rol: true }
     });
 
-    // Auditoría
+    // Auditoría — usar req.usuario.id_usuario (asignado por verifyToken)
     await prisma.auditoria.create({
       data: {
-        id_usuario: req.adminUser.id,
+        id_usuario: req.usuario.id_usuario,
         accion: 'UPDATE_USUARIO',
         tabla_afectada: 'usuario',
         id_registro_afectado: id,
@@ -105,9 +105,11 @@ export const cerrarSesion = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await prisma.sesion.delete({ where: { id_sesion: id } });
+
+    // Auditoría — usar req.usuario.id_usuario (asignado por verifyToken)
     await prisma.auditoria.create({
       data: {
-        id_usuario: req.adminUser.id,
+        id_usuario: req.usuario.id_usuario,
         accion: 'FORCE_LOGOUT',
         tabla_afectada: 'sesiones',
         id_registro_afectado: id,
