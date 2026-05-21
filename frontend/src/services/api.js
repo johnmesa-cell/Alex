@@ -1,10 +1,11 @@
 import axios from 'axios';
 
-// CORRECCIÓN: baseURL siempre debe ser '/' cuando se usa el proxy de Vite.
-// En producción, configurar VITE_API_URL con la URL real del backend.
-// El proxy en vite.config.js redirige /api → backend.
+// CORRECCIÓN: baseURL debe ser '/api' para que el proxy de Vite intercepte
+// las peticiones y las redirija al backend correctamente.
+// En producción, configurar VITE_API_URL con la URL completa del backend (incluyendo /api).
+// Ejemplo: VITE_API_URL=https://api.megiddo20.me/api
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 20000,
   headers: { 'Content-Type': 'application/json' },
   // SEGURIDAD: withCredentials envia cookies httpOnly al backend.
@@ -22,8 +23,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // CORRECCIÓN: Se eliminó la limpieza de localStorage.
-      // El token JWT debe gestionarse SÓLO mediante cookies httpOnly
+      // El token JWT se gestiona SÓLO mediante cookies httpOnly
       // configuradas en el backend con Set-Cookie (Secure, HttpOnly, SameSite).
       // localStorage es vulnerable a ataques XSS.
       if (onTokenExpired) onTokenExpired();
@@ -33,7 +33,7 @@ api.interceptors.response.use(
 );
 
 export function getApiError(error) {
-  // CORRECCIÓN: Distinguir errores de red vs errores HTTP
+  // Distinguir errores de red vs errores HTTP
   if (!error.response && error.request) {
     return 'No se pudo conectar con el servidor. Verifica tu conexión o que el backend esté activo.';
   }
