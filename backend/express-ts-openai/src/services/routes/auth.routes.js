@@ -19,6 +19,11 @@ export const setAuthRoutes = (app) => {
     if (!token) {
       return res.status(401).json({ success: false, message: 'No hay sesión activa.' });
     }
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
     return res.status(200).json({ success: true, token });
   });
 
