@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api, { getApiError } from '../services/api.js';
+import LiveVoice from '../components/LiveVoice';
 import '../styles/admin.css';
 
 const AGENT_PANEL = import.meta.env.VITE_AGENT_PANEL_URL ?? 'https://agent.megiddo20.me/admin';
@@ -17,6 +18,7 @@ const TABS = [
   { id: 'sesiones',   label: 'Sesiones activas',  d: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z' },
   { id: 'auditoria',  label: 'Auditoría',         d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8' },
   { id: 'consultas',  label: 'Consultas',         d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
+  { id: 'voice',      label: '🎙️ Voz en vivo',    d: 'M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z' },
   { id: 'agente',     label: 'Panel del Agente',  d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
 ];
 
@@ -450,6 +452,7 @@ export default function AdminPanel() {
     sesiones:  <Sesiones />,
     auditoria: <Auditoria />,
     consultas: <Consultas />,
+    voice:     <LiveVoice />,
     agente:    <PanelAgente />,
   };
 
