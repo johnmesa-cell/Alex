@@ -6,6 +6,11 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { fileURLToPath } from 'url';
 import path from 'path';
+import http from 'http';
+import { WebSocketServer } from 'ws';
+import WebSocket from 'ws';
+import jwt from 'jsonwebtoken';
+import config from '../config/index.js';
 import { setAuthRoutes }     from "./routes/auth.routes.js";
 import { setFirstAidRoutes } from "./routes/firstaid.routes.js";
 import { setVoiceRoutes }    from "./routes/voice.routes.js";
@@ -76,7 +81,100 @@ setAgentRoutes(app);
 setAdminRoutes(app);
 setUsersRoutes(app);
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = http.createServer(app);
+const wss = new WebSocketServer({ noServer: true });
+
+server.on('upgrade', (req, socket, head) => {
+    const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
+
+    if (pathname === '/admin/live') {
+      // Leer JWT desde cookie alex_token
+      const cookieHeader = req.headers.cookie || '';
+      const tokenMatch = cookieHeader.match(/alex_token=([^;]+)/);
+      const token = tokenMatch ? tokenMatch[1] : null;
+
+      if (!token) {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
+      let decoded;
+      try {
+        decoded = jwt.verify(token, config.jwtSecret);
+      } catch {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
+      // Solo usuarios con rol admin pueden usar voz en tiempo real
+      if (!decoded || decoded.role !== 'admin') {
+        socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit('connection', ws, req);
+      });
+    } else {
+      // Cualquier otra ruta WebSocket no está soportada
+      socket.destroy();
+    }
+  });
+
+  wss.on('connection', (browserWs) => {
+    console.log('🔁 Proxy WebSocket /admin/live → agente abierto');
+
+    const agentWsUrl = (process.env.AGENT_URL_WS || 'ws://alex_agent:3500') + '/admin/live';
+
+    // Conectar al agente enviando header de autenticación interna
+    const agentWs = new WebSocket(agentWsUrl, {
+      headers: {
+        'x-from-backend': 'true'
+      }
+    });
+
+    // Proxy bidireccional: browser → agente
+    browserWs.on('message', (data) => {
+      if (agentWs.readyState === WebSocket.OPEN) {
+        agentWs.send(data);
+      }
+    });
+
+    // Proxy bidireccional: agente → browser
+    agentWs.on('message', (data) => {
+      if (browserWs.readyState === WebSocket.OPEN) {
+        browserWs.send(data);
+      }
+    });
+
+    agentWs.on('error', (err) => {
+      console.error('❌ Error WebSocket agente:', err.message);
+      if (browserWs.readyState === WebSocket.OPEN) {
+        browserWs.close(1011, 'Error conectando con agente');
+      }
+    });
+
+    agentWs.on('open', () => {
+      console.log('✅ Proxy conectado al agente WebSocket');
+    });
+
+    browserWs.on('close', () => {
+      agentWs.close();
+      console.log('🔇 Browser cerró la sesión de voz');
+    });
+
+    agentWs.on('close', () => {
+      if (browserWs.readyState === WebSocket.OPEN) {
+        browserWs.close();
+      }
+    });
+  });
+
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT} (Public Access)`);
+    console.log('🎙️ WebSocket proxy /admin/live activo');
     console.log("Allowed CORS origins:", allowedOrigins);
-});
+  });
