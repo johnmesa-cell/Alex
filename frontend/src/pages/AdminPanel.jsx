@@ -392,7 +392,7 @@ function PanelAgente() {
     setError('');
     setSrc(null);
 
-    api.get('/auth/token')
+    api.get(`auth/token?_=${Date.now()}`)
       .then(r => {
         const token = r.data?.token;
         // Solo establecer src si el token es válido y no vacío
