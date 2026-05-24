@@ -385,19 +385,32 @@ function Consultas() {
 function PanelAgente() {
   const [src, setSrc]     = useState(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // FIX Bug 2: api ya tiene baseURL=.../api, usar '/auth/token' evita doble /api
+  const fetchToken = useCallback(() => {
+    setLoading(true);
+    setError('');
+    setSrc(null);
+
     api.get('/auth/token')
       .then(r => {
         const token = r.data?.token;
-        setSrc(token ? `${AGENT_PANEL}?token=${token}` : AGENT_PANEL);
+        // Solo establecer src si el token es válido y no vacío
+        if (token && typeof token === 'string' && token.trim() !== '') {
+          setSrc(`${AGENT_PANEL}?token=${token}`);
+        } else {
+          setError('No se pudo obtener el token de sesión.');
+        }
       })
       .catch(() => {
         setError('No se pudo obtener el token de sesión.');
-        setSrc(AGENT_PANEL);
-      });
+      })
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchToken();
+  }, [fetchToken]);
 
   return (
     <div className="adm-section adm-section--iframe fade-up">
@@ -413,11 +426,16 @@ function PanelAgente() {
           </a>
         )}
       </div>
-      {error && <div className="adm-error">{error}</div>}
-      {!src
-        ? <div className="adm-loading"><span className="adm-spinner" />Conectando con el agente…</div>
-        : <iframe src={src} className="adm-agent-iframe" title="ALEX Agent Admin" />
-      }
+      {error && (
+        <div>
+          <div className="adm-error">{error}</div>
+          <button onClick={fetchToken} className="btn-primary" style={{ marginTop: 10 }}>
+            Reintentar
+          </button>
+        </div>
+      )}
+      {!error && loading && <div className="adm-loading"><span className="adm-spinner" />Conectando con el agente…</div>}
+      {src && <iframe src={src} className="adm-agent-iframe" title="ALEX Agent Admin" />}
     </div>
   );
 }
