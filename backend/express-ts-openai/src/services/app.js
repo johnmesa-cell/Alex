@@ -1,4 +1,5 @@
 import express from "express";
+import helmet from "helmet";
 import bodyParser from "body-parser";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -20,6 +21,13 @@ dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    hsts: { maxAge: 31536000, includeSubDomains: true },
+    frameguard: { action: "deny" }
+}));
 
 app.use('/uploads',    express.static(path.join(__dirname, '../../../uploads')));
 app.use('/temp_voice', express.static(path.join(__dirname, '../../../temp_voice')));

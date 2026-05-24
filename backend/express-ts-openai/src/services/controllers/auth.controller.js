@@ -150,7 +150,10 @@ class AuthController {
             }
 
             await prisma.sesion.deleteMany({
-                where: { id_usuario: user.id_usuario }
+                where: {
+                    id_usuario: user.id_usuario,
+                    fecha_expiracion: { lt: new Date() }
+                }
             });
 
             const expiresIn = "24h";

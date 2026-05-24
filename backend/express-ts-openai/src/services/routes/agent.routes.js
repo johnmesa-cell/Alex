@@ -3,6 +3,7 @@ import multer from 'multer';
 import FormData from 'form-data';
 import { requireAdmin } from '../../middlewares/admin.middleware.js';
 import { verifyToken, optionalToken } from '../../middlewares/auth.middleware.js';
+import { chatLimiter } from '../../config/rateLimiter.js';
 import { prisma } from '../prisma.client.js';
 
 const router = Router();
@@ -44,7 +45,7 @@ router.all('/admin*', requireAdmin, async (req, res) => {
 // optionalToken permite consultas en modo invitado (sin cuenta).
 // Si hay sesión activa, se guarda la consulta en BD; si no, se responde
 // igualmente sin persistir.
-router.post('/chat', optionalToken, async (req, res) => {
+router.post('/chat', chatLimiter, optionalToken, async (req, res) => {
   try {
     const { message, sessionId } = req.body;
     if (!message || !sessionId) {

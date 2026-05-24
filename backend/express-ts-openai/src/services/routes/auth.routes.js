@@ -1,12 +1,13 @@
 import express from "express";
 import authController from "../controllers/auth.controller.js";
 import { verifyToken } from "../../middlewares/auth.middleware.js";
+import { loginLimiter, registerLimiter } from "../../config/rateLimiter.js";
 
 export const setAuthRoutes = (app) => {
   const router = express.Router();
 
-  router.post("/register", authController.register);
-  router.post("/login",    authController.login);
+  router.post("/register", registerLimiter, authController.register);
+  router.post("/login",    loginLimiter, authController.login);
   router.post("/logout",   authController.logout);
 
   // GET /api/auth/token — devuelve el JWT de la cookie httpOnly para que
