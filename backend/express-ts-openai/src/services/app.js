@@ -20,6 +20,7 @@ dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+app.set('etag', false);
 const PORT = process.env.PORT || 3000;
 
 app.use(helmet({
