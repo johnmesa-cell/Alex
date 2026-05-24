@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import api, { getApiError } from '../services/api.js';
 import '../styles/admin.css';
 
@@ -38,7 +39,6 @@ function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Carga inicial + refresco automático cada 60 segundos
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 60000);
@@ -87,7 +87,6 @@ function Usuarios() {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [toast, setToast]     = useState('');
-  // MEJORA: confirmación antes de desactivar
   const [confirm, setConfirm] = useState(null);
 
   const load = useCallback((p = 1, q = search) => {
@@ -172,7 +171,6 @@ function Usuarios() {
         <button disabled={page >= pages}  onClick={() => load(page + 1)} className="btn-secondary">Siguiente</button>
       </div>
 
-      {/* MEJORA: Modal de confirmación */}
       {confirm && (
         <div className="adm-modal-backdrop" onClick={() => setConfirm(null)}>
           <div className="adm-modal adm-modal--sm" onClick={e => e.stopPropagation()}>
@@ -265,7 +263,6 @@ function Sesiones() {
 }
 
 // ─── Auditoría ───────────────────────────────────────────────────────────────
-// MEJORA: colores por tipo de acción
 const ACTION_COLOR = {
   CREATE: 'teal',
   INSERT: 'teal',
@@ -321,7 +318,6 @@ function Auditoria() {
                         <span className={`adm-chip adm-chip--${color}`}>{e.accion}</span>
                       </td>
                       <td>{e.tabla_afectada ?? '—'}</td>
-                      {/* MEJORA: truncar valores largos */}
                       <td><code className="adm-code adm-code--truncate">{e.valor_anterior ?? '—'}</code></td>
                       <td><code className="adm-code adm-code--truncate">{e.valor_nuevo    ?? '—'}</code></td>
                       <td>{e.ip ?? '—'}</td>
@@ -344,13 +340,13 @@ function Auditoria() {
 
 // ─── Consultas ───────────────────────────────────────────────────────────────
 function Consultas() {
-  const [rows, setRows]       = useState([]);
-  const [page, setPage]       = useState(1);
-  const [pages, setPages]     = useState(1);
-  const [total, setTotal]     = useState(0);
-  const [filtro, setFiltro]   = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const [rows, setRows]         = useState([]);
+  const [page, setPage]         = useState(1);
+  const [pages, setPages]       = useState(1);
+  const [total, setTotal]       = useState(0);
+  const [filtro, setFiltro]     = useState('');
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState('');
   const [selected, setSelected] = useState(null);
   const modalRef = useRef(null);
 
@@ -370,7 +366,7 @@ function Consultas() {
 
   useEffect(() => { load(); }, []);
 
-  // MEJORA: cerrar modal con tecla Escape
+  // Cerrar modal con Escape
   useEffect(() => {
     if (!selected) return;
     const onKey = (e) => { if (e.key === 'Escape') setSelected(null); };
@@ -378,7 +374,7 @@ function Consultas() {
     return () => document.removeEventListener('keydown', onKey);
   }, [selected]);
 
-  // MEJORA: foco en modal al abrirse
+  // Foco en modal al abrirse
   useEffect(() => {
     if (selected && modalRef.current) modalRef.current.focus();
   }, [selected]);
@@ -436,7 +432,6 @@ function Consultas() {
         <button disabled={page >= pages} onClick={() => load(page + 1)} className="btn-secondary">Siguiente</button>
       </div>
 
-      {/* MEJORA: Modal con botón ✕ visible, cierre Escape, scroll interno */}
       {selected && (
         <div className="adm-modal-backdrop" onClick={() => setSelected(null)}>
           <div
@@ -448,11 +443,9 @@ function Consultas() {
           >
             <div className="adm-modal-header">
               <h3>{selected.asunto}</h3>
-              {/* MEJORA: botón cerrar con ✕ visible */}
               <button className="adm-modal-close" onClick={() => setSelected(null)}>✕</button>
             </div>
             <p className="adm-modal-meta">{selected.usuario?.nombre} · {fmt(selected.fecha_creacion)}</p>
-            {/* MEJORA: scroll interno para contenido largo */}
             <div className="adm-modal-body">
               <div className="adm-modal-block">
                 <strong>Mensaje del usuario</strong>
@@ -461,7 +454,8 @@ function Consultas() {
               {selected.respuesta_ia && (
                 <div className="adm-modal-block adm-modal-block--ia">
                   <strong>Respuesta de la IA</strong>
-                  <p>{selected.respuesta_ia}</p>
+                  {/* MEJORA: renderizar Markdown igual que en el chat principal */}
+                  <ReactMarkdown className="message-body">{selected.respuesta_ia}</ReactMarkdown>
                 </div>
               )}
             </div>
@@ -479,7 +473,6 @@ function PanelAgente() {
 
   useEffect(() => {
     // FIX: ?_=Date.now() evita que el navegador cachee la respuesta (304)
-    // withCredentials en api.js garantiza que la cookie alex_token se envíe
     api.get(`auth/token?_=${Date.now()}`)
       .then(r => {
         const token = r.data?.token;
