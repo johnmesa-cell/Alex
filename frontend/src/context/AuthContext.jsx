@@ -8,18 +8,14 @@ const USER_KEY = 'alex_user';
 
 function normalizeUser(payload = {}) {
   return {
-    // id e id_usuario: cubre todos los alias posibles del backend
-    id:            payload.id || payload.id_usuario || payload.idusuario || null,
-    id_usuario:    payload.id || payload.id_usuario || payload.idusuario || null,
-    nombre:        payload.nombre || '',
-    correo:        payload.correo || payload.email || '',
-    idRol:         payload.idRol || payload.id_rol || payload.idrol || null,
-    rolNombre:     payload.rolNombre || payload.rol_nombre || payload.nombreRol || null,
+    id: payload.id || payload.id_usuario || payload.idusuario || null,
+    id_usuario: payload.id || payload.id_usuario || payload.idusuario || null,
+    nombre: payload.nombre || '',
+    correo: payload.correo || payload.email || '',
+    idRol: payload.idRol || payload.id_rol || payload.idrol || null,
+    rolNombre: payload.rolNombre || payload.rol_nombre || payload.nombreRol || null,
     fechaRegistro: payload.fechaRegistro || payload.fecha_registro || null,
-    // CORRECCIÓN Bug 2: ultimo_login no se mapeaba → Home.jsx siempre mostraba 'Hoy'.
-    // Se cubre el nombre snake_case que devuelve Prisma/el backend y el camelCase
-    // por si ya hubiese sesiones guardadas en localStorage con ese nombre.
-    ultimoLogin:   payload.ultimoLogin || payload.ultimo_login || payload.ultimologin || null,
+    ultimoLogin: payload.ultimoLogin || payload.ultimo_login || payload.ultimologin || null,
   };
 }
 
@@ -29,8 +25,6 @@ export function AuthProvider({ children }) {
     if (!raw) return null;
     try {
       const parsed = JSON.parse(raw);
-      // Re-normalizar al cargar para que sesiones guardadas antes de este fix
-      // también tengan ultimoLogin correctamente.
       return normalizeUser(parsed);
     } catch {
       localStorage.removeItem(USER_KEY);
@@ -38,24 +32,24 @@ export function AuthProvider({ children }) {
     }
   });
 
+  const clearSession = useCallback(() => {
+    setUser(null);
+    localStorage.removeItem(USER_KEY);
+  }, []);
+
   useEffect(() => {
     setTokenExpiredCallback(() => {
       clearSession();
     });
-  }, []);
+  }, [clearSession]);
 
   const saveSession = useCallback((nextUser) => {
     setUser(nextUser);
     localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
   }, []);
 
-  const clearSession = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem(USER_KEY);
-  }, []);
-
   const register = useCallback(async (formData) => {
-    const { data } = await api.post('/api/auth/register', formData);
+    const { data } = await api.post('/auth/register', formData);
     return {
       message: data?.message || 'Registro completado',
       user: normalizeUser(data?.data?.user || {})
@@ -63,7 +57,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (credentials) => {
-    const { data } = await api.post('/api/auth/login', credentials);
+    const { data } = await api.post('/auth/login', credentials);
     const nextUser = normalizeUser(data?.data?.user || {});
     saveSession(nextUser);
     return {
@@ -74,13 +68,12 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try {
-      await api.post('/api/auth/logout');
+      await api.post('/auth/logout');
     } finally {
       clearSession();
     }
   }, [clearSession]);
 
-  // Actualiza el nombre en el contexto y localStorage sin requerir re-login
   const updateUser = useCallback((partial) => {
     setUser((prev) => {
       if (!prev) return prev;
