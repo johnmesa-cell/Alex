@@ -15,12 +15,12 @@ export default function LiveVoice() {
   const wsRef           = useRef(null);
   const audioCtxRef     = useRef(null);
   const streamRef       = useRef(null);
-  const recorderRef     = useRef(null);  // reemplaza processorRef
+  const processorRef    = useRef(null);
   const analyserRef     = useRef(null);
   const timerRef        = useRef(null);
   const canvasRef       = useRef(null);
   const rafRef          = useRef(null);
-  const closingRef      = useRef(false); // evita loop de cierre
+  const closingRef      = useRef(false);
 
   useEffect(() => () => stopSession(), []);
 
@@ -64,39 +64,34 @@ export default function LiveVoice() {
   };
 
   const stopSession = () => {
-    if (closingRef.current) return; // evita loop
+    if (closingRef.current) return;
     closingRef.current = true;
 
     cancelAnimationFrame(rafRef.current);
     clearInterval(timerRef.current);
 
-    // Detener MediaRecorder
-    if (recorderRef.current && recorderRef.current.state === 'recording') {
-      recorderRef.current.stop();
+    // Desconectar ScriptProcessorNode
+    if (processorRef.current) {
+      processorRef.current.disconnect();
+      processorRef.current = null;
     }
-    recorderRef.current = null;
 
-    // Detener analyser
     analyserRef.current = null;
 
-    // Detener micrófono
     streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
 
-    // Cerrar AudioContext
     if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
       audioCtxRef.current.close();
     }
     audioCtxRef.current = null;
 
-    // Cerrar WebSocket
     if (wsRef.current) {
-      wsRef.current.onclose = null; // evita que onclose dispare stopSession de nuevo
+      wsRef.current.onclose = null;
       wsRef.current.close();
       wsRef.current = null;
     }
 
-    // Limpiar canvas
     const canvas = canvasRef.current;
     if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
 
@@ -104,7 +99,6 @@ export default function LiveVoice() {
     setTimeLeft(SESSION_DURATION);
     setVolume(0);
 
-    // Resetear flag después de un tick
     setTimeout(() => { closingRef.current = false; }, 100);
   };
 
@@ -124,8 +118,8 @@ export default function LiveVoice() {
       ws.onopen = () => {
         setStatus('listening');
 
-        // AudioContext solo para el visualizador (sin ScriptProcessorNode)
-        const audioCtx = new AudioContext();
+        // AudioContext a 24kHz — formato que espera OpenAI Realtime API
+        const audioCtx = new AudioContext({ sampleRate: 24000 });
         audioCtxRef.current = audioCtx;
 
         const source   = audioCtx.createMediaStreamSource(stream);
@@ -136,29 +130,30 @@ export default function LiveVoice() {
 
         drawBars();
 
-        // MediaRecorder para capturar y enviar audio (estable en Chrome moderno)
-        const recorder = new MediaRecorder(stream, {
-          mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-            ? 'audio/webm;codecs=opus'
-            : 'audio/webm'
-        });
-        recorderRef.current = recorder;
-
-        recorder.ondataavailable = async (e) => {
-          if (!e.data || e.data.size === 0) return;
+        // ScriptProcessorNode: captura PCM float32 → convierte a PCM16 → envía base64
+        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+        processor.onaudioprocess = (e) => {
           if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
 
-          const buffer = await e.data.arrayBuffer();
-          const uint8  = new Uint8Array(buffer);
+          const float32 = e.inputBuffer.getChannelData(0);
+          const pcm16   = new Int16Array(float32.length);
+          for (let i = 0; i < float32.length; i++) {
+            pcm16[i] = Math.max(-32768, Math.min(32767, float32[i] * 32768));
+          }
+
+          const bytes = new Uint8Array(pcm16.buffer);
           let binary = '';
-          for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+          for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+
           wsRef.current.send(JSON.stringify({
             type: 'input_audio_buffer.append',
             audio: btoa(binary)
           }));
         };
 
-        recorder.start(250); // chunk cada 250ms
+        source.connect(processor);
+        processor.connect(audioCtx.destination);
+        processorRef.current = processor;
 
         // Temporizador de 10 minutos
         timerRef.current = setInterval(() => {
@@ -249,7 +244,6 @@ export default function LiveVoice() {
       border: '1px solid rgba(255,255,255,0.07)'
     }}>
 
-      {/* Encabezado */}
       <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
@@ -269,7 +263,6 @@ export default function LiveVoice() {
         </p>
       </div>
 
-      {/* Canvas visualizador */}
       <canvas
         ref={canvasRef}
         width={320} height={64}
@@ -281,7 +274,6 @@ export default function LiveVoice() {
         }}
       />
 
-      {/* Temporizador */}
       {status === 'listening' && (
         <div style={{
           marginBottom: '1.25rem',
@@ -295,7 +287,6 @@ export default function LiveVoice() {
         </div>
       )}
 
-      {/* Mensaje de error */}
       {errorMsg && (
         <div style={{
           marginBottom: '1.25rem', padding: '0.75rem 1rem',
@@ -306,7 +297,6 @@ export default function LiveVoice() {
         </div>
       )}
 
-      {/* Botón principal */}
       {status === 'idle' && (
         <button
           onClick={startSession}
@@ -378,7 +368,6 @@ export default function LiveVoice() {
         </button>
       )}
 
-      {/* Info costos */}
       <p style={{
         marginTop: '1.5rem', color: '#4a5568', fontSize: '0.72rem', textAlign: 'center'
       }}>
