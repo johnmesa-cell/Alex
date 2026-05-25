@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import api, { getApiError } from '../services/api.js';
+import LiveVoice from './LiveVoice.jsx';
 import '../styles/admin.css';
 
 const AGENT_PANEL = import.meta.env.VITE_AGENT_PANEL_URL ?? 'https://agent.megiddo20.me/admin';
@@ -12,12 +13,13 @@ const Icon = ({ d, size = 18 }) => (
 );
 
 const TABS = [
-  { id: 'dashboard', label: 'Dashboard',         d: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
-  { id: 'usuarios',  label: 'Usuarios',           d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' },
-  { id: 'sesiones',  label: 'Sesiones activas',   d: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z' },
-  { id: 'auditoria', label: 'Auditoría',           d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8' },
-  { id: 'consultas', label: 'Consultas',           d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
-  { id: 'agente',    label: 'Panel del Agente',    d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
+  { id: 'dashboard', label: 'Dashboard',           d: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+  { id: 'usuarios',  label: 'Usuarios',             d: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' },
+  { id: 'sesiones',  label: 'Sesiones activas',     d: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z' },
+  { id: 'auditoria', label: 'Auditoría',             d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8' },
+  { id: 'consultas', label: 'Consultas',             d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
+  { id: 'agente',    label: 'Panel del Agente',      d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
+  { id: 'voz',       label: 'Voz en tiempo real',    d: 'M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8', isNew: true },
 ];
 
 function fmt(dateStr) {
@@ -94,10 +96,10 @@ function Usuarios() {
     api.get('/admin/usuarios', { params: { page: p, search: q } })
       .then(r => {
         const d = r.data?.data ?? {};
-        setRows(d.usuarios   ?? []);
-        setTotal(d.total     ?? 0);
-        setPage(d.page       ?? 1);
-        setPages(d.pages     ?? 1);
+        setRows(d.usuarios ?? []);
+        setTotal(d.total   ?? 0);
+        setPage(d.page     ?? 1);
+        setPages(d.pages   ?? 1);
       })
       .catch(e => setError(getApiError(e)))
       .finally(() => setLoading(false));
@@ -166,9 +168,9 @@ function Usuarios() {
         </div>
       )}
       <div className="adm-pagination">
-        <button disabled={page <= 1}      onClick={() => load(page - 1)} className="btn-secondary">Anterior</button>
+        <button disabled={page <= 1}     onClick={() => load(page - 1)} className="btn-secondary">Anterior</button>
         <span>Página {page} de {pages}</span>
-        <button disabled={page >= pages}  onClick={() => load(page + 1)} className="btn-secondary">Siguiente</button>
+        <button disabled={page >= pages} onClick={() => load(page + 1)} className="btn-secondary">Siguiente</button>
       </div>
 
       {confirm && (
@@ -314,9 +316,7 @@ function Auditoria() {
                     <tr key={e.id_evento}>
                       <td>{fmt(e.timestamp)}</td>
                       <td>{e.usuario?.nombre ?? 'Sistema'}</td>
-                      <td>
-                        <span className={`adm-chip adm-chip--${color}`}>{e.accion}</span>
-                      </td>
+                      <td><span className={`adm-chip adm-chip--${color}`}>{e.accion}</span></td>
                       <td>{e.tabla_afectada ?? '—'}</td>
                       <td><code className="adm-code adm-code--truncate">{e.valor_anterior ?? '—'}</code></td>
                       <td><code className="adm-code adm-code--truncate">{e.valor_nuevo    ?? '—'}</code></td>
@@ -366,7 +366,6 @@ function Consultas() {
 
   useEffect(() => { load(); }, []);
 
-  // Cerrar modal con Escape
   useEffect(() => {
     if (!selected) return;
     const onKey = (e) => { if (e.key === 'Escape') setSelected(null); };
@@ -374,7 +373,6 @@ function Consultas() {
     return () => document.removeEventListener('keydown', onKey);
   }, [selected]);
 
-  // Foco en modal al abrirse
   useEffect(() => {
     if (selected && modalRef.current) modalRef.current.focus();
   }, [selected]);
@@ -454,7 +452,6 @@ function Consultas() {
               {selected.respuesta_ia && (
                 <div className="adm-modal-block adm-modal-block--ia">
                   <strong>Respuesta de la IA</strong>
-                  {/* MEJORA: renderizar Markdown igual que en el chat principal */}
                   <ReactMarkdown className="message-body">{selected.respuesta_ia}</ReactMarkdown>
                 </div>
               )}
@@ -472,7 +469,6 @@ function PanelAgente() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // FIX: ?_=Date.now() evita que el navegador cachee la respuesta (304)
     api.get(`auth/token?_=${Date.now()}`)
       .then(r => {
         const token = r.data?.token;
@@ -508,6 +504,32 @@ function PanelAgente() {
   );
 }
 
+// ─── Voz en tiempo real ───────────────────────────────────────────────────────
+function VozSection() {
+  return (
+    <div className="adm-section fade-up">
+      <div className="adm-section-header" style={{ marginBottom: '1.5rem' }}>
+        <div>
+          <h2 className="adm-section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            🎙️ Voz en tiempo real
+            <span style={{
+              background: 'linear-gradient(90deg, #3182ce, #2b6cb0)',
+              color: '#fff', fontSize: '0.6rem', fontWeight: 700,
+              padding: '0.15rem 0.5rem', borderRadius: 999,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              verticalAlign: 'middle'
+            }}>NUEVO</span>
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: '0.25rem 0 0' }}>
+            Conversación de voz bidireccional con ALEX usando OpenAI Realtime API. Solo disponible para administradores.
+          </p>
+        </div>
+      </div>
+      <LiveVoice />
+    </div>
+  );
+}
+
 // ─── AdminPanel (raíz) ────────────────────────────────────────────────────────
 export default function AdminPanel() {
   const [activeTab, setActiveTab]     = useState('dashboard');
@@ -520,6 +542,7 @@ export default function AdminPanel() {
     auditoria: <Auditoria />,
     consultas: <Consultas />,
     agente:    <PanelAgente />,
+    voz:       <VozSection />,
   };
 
   return (
@@ -542,23 +565,50 @@ export default function AdminPanel() {
           </svg>
           {sidebarOpen && <span>Administración</span>}
         </div>
+
         {TABS.map(t => (
           <button
             key={t.id}
-            className={`adm-sidebar-item${activeTab === t.id ? ' adm-sidebar-item--active' : ''}`}
+            className={`adm-sidebar-item${activeTab === t.id ? ' adm-sidebar-item--active' : ''}${t.isNew ? ' adm-sidebar-item--new' : ''}`}
             onClick={() => {
               setActiveTab(t.id);
               if (window.innerWidth < 640) setSidebarOpen(false);
             }}
+            title={t.label}
           >
-            <Icon d={t.d} size={18} />
-            {sidebarOpen && <span className="adm-sidebar-label">{t.label}</span>}
+            <span className="adm-sidebar-item__icon-wrap">
+              <Icon d={t.d} size={18} />
+              {t.isNew && !sidebarOpen && (
+                <span className="adm-sidebar-item__dot" />
+              )}
+            </span>
+            {sidebarOpen && (
+              <span className="adm-sidebar-label">
+                {t.label}
+                {t.isNew && (
+                  <span className="adm-sidebar-item__badge">NUEVO</span>
+                )}
+              </span>
+            )}
           </button>
         ))}
       </nav>
+
       <main className="adm-main">
         <div className="adm-topbar">
-          <span className="adm-topbar-title">{TABS.find(t => t.id === activeTab)?.label}</span>
+          <span className="adm-topbar-title">
+            {TABS.find(t => t.id === activeTab)?.label}
+            {TABS.find(t => t.id === activeTab)?.isNew && (
+              <span style={{
+                marginLeft: '0.5rem',
+                background: 'linear-gradient(90deg, #3182ce, #2b6cb0)',
+                color: '#fff', fontSize: '0.6rem', fontWeight: 700,
+                padding: '0.15rem 0.5rem', borderRadius: 999,
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+                verticalAlign: 'middle'
+              }}>NUEVO</span>
+            )}
+          </span>
         </div>
         <div className="adm-content">
           {sections[activeTab]}
