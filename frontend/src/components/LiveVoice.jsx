@@ -5,22 +5,22 @@ const SESSION_DURATION = 10 * 60;
 
 export default function LiveVoice() {
   const { user } = useAuth();
-  // CORRECCIÓN: JWT usa idRol/roleId numérico (2 = admin), no role string
   const isAdmin = Number(user?.idRol ?? user?.roleId) === 2;
 
-  const [status, setStatus]   = useState('idle');
+  const [status, setStatus]     = useState('idle');
   const [timeLeft, setTimeLeft] = useState(SESSION_DURATION);
   const [errorMsg, setErrorMsg] = useState('');
-  const [volume, setVolume]   = useState(0);
+  const [volume, setVolume]     = useState(0);
 
-  const wsRef        = useRef(null);
-  const audioCtxRef  = useRef(null);
-  const streamRef    = useRef(null);
-  const processorRef = useRef(null);
-  const analyserRef  = useRef(null);
-  const timerRef     = useRef(null);
-  const canvasRef    = useRef(null);
-  const rafRef       = useRef(null);
+  const wsRef           = useRef(null);
+  const audioCtxRef     = useRef(null);
+  const streamRef       = useRef(null);
+  const recorderRef     = useRef(null);  // reemplaza processorRef
+  const analyserRef     = useRef(null);
+  const timerRef        = useRef(null);
+  const canvasRef       = useRef(null);
+  const rafRef          = useRef(null);
+  const closingRef      = useRef(false); // evita loop de cierre
 
   useEffect(() => () => stopSession(), []);
 
@@ -64,23 +64,55 @@ export default function LiveVoice() {
   };
 
   const stopSession = () => {
+    if (closingRef.current) return; // evita loop
+    closingRef.current = true;
+
     cancelAnimationFrame(rafRef.current);
     clearInterval(timerRef.current);
-    processorRef.current?.disconnect();
+
+    // Detener MediaRecorder
+    if (recorderRef.current && recorderRef.current.state === 'recording') {
+      recorderRef.current.stop();
+    }
+    recorderRef.current = null;
+
+    // Detener analyser
     analyserRef.current = null;
+
+    // Detener micrófono
     streamRef.current?.getTracks().forEach(t => t.stop());
-    audioCtxRef.current?.close();
-    if (wsRef.current) { wsRef.current.close(); wsRef.current = null; }
+    streamRef.current = null;
+
+    // Cerrar AudioContext
+    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+      audioCtxRef.current.close();
+    }
+    audioCtxRef.current = null;
+
+    // Cerrar WebSocket
+    if (wsRef.current) {
+      wsRef.current.onclose = null; // evita que onclose dispare stopSession de nuevo
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
+    // Limpiar canvas
+    const canvas = canvasRef.current;
+    if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+
     setStatus('idle');
     setTimeLeft(SESSION_DURATION);
     setVolume(0);
-    const canvas = canvasRef.current;
-    if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+
+    // Resetear flag después de un tick
+    setTimeout(() => { closingRef.current = false; }, 100);
   };
 
   const startSession = async () => {
     setStatus('connecting');
     setErrorMsg('');
+    closingRef.current = false;
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -91,7 +123,9 @@ export default function LiveVoice() {
 
       ws.onopen = () => {
         setStatus('listening');
-        const audioCtx = new AudioContext({ sampleRate: 24000 });
+
+        // AudioContext solo para el visualizador (sin ScriptProcessorNode)
+        const audioCtx = new AudioContext();
         audioCtxRef.current = audioCtx;
 
         const source   = audioCtx.createMediaStreamSource(stream);
@@ -100,27 +134,33 @@ export default function LiveVoice() {
         analyserRef.current = analyser;
         source.connect(analyser);
 
-        const processor = audioCtx.createScriptProcessor(4096, 1, 1);
-        processorRef.current = processor;
-        source.connect(processor);
-        processor.connect(audioCtx.destination);
-
-        processor.onaudioprocess = (e) => {
-          if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-          const float32 = e.inputBuffer.getChannelData(0);
-          const pcm16   = new Int16Array(float32.length);
-          for (let i = 0; i < float32.length; i++) {
-            const c = Math.max(-1, Math.min(1, float32[i]));
-            pcm16[i] = c < 0 ? c * 32768 : c * 32767;
-          }
-          const uint8 = new Uint8Array(pcm16.buffer);
-          let binary = '';
-          for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
-          wsRef.current.send(JSON.stringify({ type: 'input_audio_buffer.append', audio: btoa(binary) }));
-        };
-
         drawBars();
 
+        // MediaRecorder para capturar y enviar audio (estable en Chrome moderno)
+        const recorder = new MediaRecorder(stream, {
+          mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+            ? 'audio/webm;codecs=opus'
+            : 'audio/webm'
+        });
+        recorderRef.current = recorder;
+
+        recorder.ondataavailable = async (e) => {
+          if (!e.data || e.data.size === 0) return;
+          if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+
+          const buffer = await e.data.arrayBuffer();
+          const uint8  = new Uint8Array(buffer);
+          let binary = '';
+          for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i]);
+          wsRef.current.send(JSON.stringify({
+            type: 'input_audio_buffer.append',
+            audio: btoa(binary)
+          }));
+        };
+
+        recorder.start(250); // chunk cada 250ms
+
+        // Temporizador de 10 minutos
         timerRef.current = setInterval(() => {
           setTimeLeft(prev => {
             if (prev <= 1) { stopSession(); return SESSION_DURATION; }
@@ -139,6 +179,7 @@ export default function LiveVoice() {
               pcm16[i] = binary.charCodeAt(i * 2) | (binary.charCodeAt(i * 2 + 1) << 8);
             const float32 = new Float32Array(pcm16.length);
             for (let i = 0; i < pcm16.length; i++) float32[i] = pcm16[i] / 32768.0;
+
             const audioCtx = audioCtxRef.current;
             if (audioCtx && audioCtx.state !== 'closed') {
               const buffer = audioCtx.createBuffer(1, float32.length, 24000);
@@ -153,18 +194,23 @@ export default function LiveVoice() {
       };
 
       ws.onerror = () => {
-        setStatus('error');
-        setErrorMsg('Error de conexión WebSocket. Verifica que el servidor esté activo.');
-        stopSession();
+        if (!closingRef.current) {
+          setStatus('error');
+          setErrorMsg('Error de conexión WebSocket. Verifica que el servidor esté activo.');
+          stopSession();
+        }
       };
 
       ws.onclose = (event) => {
-        if (event.code === 1000 && event.reason === 'Session timeout') {
-          setErrorMsg('La sesión expiró después de 10 minutos.');
-          setStatus('error');
+        if (!closingRef.current) {
+          if (event.code === 1000 && event.reason === 'Session timeout') {
+            setErrorMsg('La sesión expiró después de 10 minutos.');
+            setStatus('error');
+          }
+          stopSession();
         }
-        stopSession();
       };
+
     } catch (err) {
       setStatus('error');
       setErrorMsg(
@@ -172,6 +218,7 @@ export default function LiveVoice() {
           ? 'Permiso de micrófono denegado. Autoriza el acceso en tu navegador.'
           : err.message || 'No se pudo iniciar la sesión de voz.'
       );
+      closingRef.current = false;
     }
   };
 
@@ -234,141 +281,109 @@ export default function LiveVoice() {
         }}
       />
 
-      {/* Estado idle */}
-      {status === 'idle' && (
-        <div className="lv-fade-in" style={{ textAlign: 'center' }}>
-          <button
-            onClick={startSession}
-            style={{
-              width: 88, height: 88, borderRadius: '50%',
-              background: 'radial-gradient(circle at 35% 35%, #4299e1, #2b6cb0)',
-              border: '3px solid rgba(99,179,237,0.35)',
-              cursor: 'pointer', fontSize: '2.2rem',
-              animation: 'pulse-ring 2.2s infinite',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 1rem', transition: 'transform 0.15s'
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.07)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-            title="Iniciar sesión de voz"
-          >
-            🎤
-          </button>
-          <p style={{ color: '#a0aec0', fontSize: '0.85rem', margin: 0 }}>
-            Toca para iniciar la conversación
-          </p>
-        </div>
-      )}
-
-      {/* Estado conectando */}
-      {status === 'connecting' && (
-        <div className="lv-fade-in" style={{ textAlign: 'center' }}>
-          <div style={{
-            width: 88, height: 88, borderRadius: '50%',
-            border: '3px solid #4a5568', borderTop: '3px solid #63b3ed',
-            animation: 'spin-slow 1s linear infinite',
-            margin: '0 auto 1rem'
-          }} />
-          <p style={{ color: '#ecc94b', fontSize: '0.92rem', margin: 0 }}>
-            Conectando con el servidor…
-          </p>
-        </div>
-      )}
-
-      {/* Estado escuchando */}
+      {/* Temporizador */}
       {status === 'listening' && (
-        <div className="lv-fade-in" style={{ textAlign: 'center', width: '100%' }}>
+        <div style={{
+          marginBottom: '1.25rem',
+          fontSize: '0.82rem',
+          color: timeWarning ? '#fc8181' : '#718096',
+          fontVariantNumeric: 'tabular-nums',
+          display: 'flex', alignItems: 'center', gap: '0.4rem'
+        }}>
+          {timeWarning && <span style={{ animation: 'dot-pulse 1s infinite' }}>⚠️</span>}
+          Tiempo restante: <strong>{formatTime(timeLeft)}</strong>
+        </div>
+      )}
+
+      {/* Mensaje de error */}
+      {errorMsg && (
+        <div style={{
+          marginBottom: '1.25rem', padding: '0.75rem 1rem',
+          background: 'rgba(252,129,129,0.1)', border: '1px solid rgba(252,129,129,0.3)',
+          borderRadius: 10, color: '#fc8181', fontSize: '0.83rem', textAlign: 'center'
+        }}>
+          {errorMsg}
+        </div>
+      )}
+
+      {/* Botón principal */}
+      {status === 'idle' && (
+        <button
+          onClick={startSession}
+          style={{
+            width: 80, height: 80, borderRadius: '50%', border: 'none',
+            background: 'linear-gradient(135deg, #3182ce, #2b6cb0)',
+            color: '#fff', cursor: 'pointer', fontSize: '1.75rem',
+            boxShadow: '0 4px 20px rgba(49,130,206,0.5)',
+            transition: 'transform 0.15s, box-shadow 0.15s',
+            animation: 'pulse-ring 2s infinite'
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+        >
+          🎤
+        </button>
+      )}
+
+      {status === 'connecting' && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%',
+            border: '3px solid rgba(99,179,237,0.3)',
+            borderTopColor: '#63b3ed',
+            animation: 'spin-slow 0.9s linear infinite'
+          }} />
+          <span style={{ color: '#718096', fontSize: '0.85rem' }}>Conectando con ALEX…</span>
+        </div>
+      )}
+
+      {status === 'listening' && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
           <button
             onClick={stopSession}
             style={{
-              width: 88, height: 88, borderRadius: '50%',
-              background: 'radial-gradient(circle at 35% 35%, #fc8181, #c53030)',
-              border: '3px solid rgba(252,129,129,0.35)',
-              cursor: 'pointer', fontSize: '2rem',
-              animation: 'pulse-ring-active 1.5s infinite',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 1rem', transition: 'transform 0.15s'
+              width: 80, height: 80, borderRadius: '50%', border: 'none',
+              background: 'linear-gradient(135deg, #e53e3e, #c53030)',
+              color: '#fff', cursor: 'pointer', fontSize: '1.5rem',
+              boxShadow: '0 4px 20px rgba(229,62,62,0.5)',
+              transition: 'transform 0.15s',
+              animation: 'pulse-ring-active 1.5s infinite'
             }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.07)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-            title="Terminar sesión"
+            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
             ⏹
           </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-            <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#68d391', display: 'inline-block', boxShadow: '0 0 8px #68d391' }} />
-            <span style={{ color: '#68d391', fontWeight: 600, fontSize: '0.9rem' }}>
-              Escuchando — Habla con ALEX
+          <span style={{ color: '#68d391', fontSize: '0.85rem', fontWeight: 600 }}>
+            🎙️ Escuchando — Habla con ALEX
+          </span>
+          {volume > 0 && (
+            <span style={{ color: '#718096', fontSize: '0.75rem' }}>
+              Nivel de entrada: {volume}%
             </span>
-          </div>
-
-          <div style={{
-            fontFamily: 'monospace', fontSize: '2.4rem', fontWeight: 700,
-            color: timeWarning ? '#fc8181' : '#e2e8f0',
-            letterSpacing: 4, marginBottom: '0.5rem',
-            textShadow: timeWarning ? '0 0 12px rgba(252,129,129,0.5)' : 'none',
-            transition: 'color 0.5s, text-shadow 0.5s'
-          }}>
-            ⏱ {formatTime(timeLeft)}
-          </div>
-
-          {timeWarning && (
-            <p style={{ color: '#fc8181', fontSize: '0.78rem', margin: '0 0 0.75rem', opacity: 0.85 }}>
-              La sesión cerrará pronto
-            </p>
           )}
-
-          <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 4, overflow: 'hidden', marginTop: '0.5rem' }}>
-            <div style={{
-              height: '100%', width: `${volume}%`,
-              background: 'linear-gradient(90deg, #63b3ed, #68d391)',
-              borderRadius: 4, transition: 'width 0.08s ease'
-            }} />
-          </div>
-          <p style={{ color: '#4a5568', fontSize: '0.7rem', marginTop: '0.35rem' }}>
-            Nivel de entrada: {volume}%
-          </p>
         </div>
       )}
 
-      {/* Estado error */}
       {status === 'error' && (
-        <div className="lv-fade-in" style={{ textAlign: 'center', width: '100%' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>⚠️</div>
-          <p style={{
-            color: '#fc8181', marginBottom: '1.25rem', fontSize: '0.9rem',
-            background: 'rgba(252,129,129,0.08)', border: '1px solid rgba(252,129,129,0.2)',
-            borderRadius: 10, padding: '0.75rem 1rem'
-          }}>
-            {errorMsg}
-          </p>
-          <button
-            onClick={() => { setStatus('idle'); setErrorMsg(''); }}
-            style={{
-              background: 'rgba(66,153,225,0.15)', color: '#90cdf4',
-              border: '1px solid rgba(99,179,237,0.3)', borderRadius: 10,
-              padding: '0.6rem 1.5rem', cursor: 'pointer',
-              fontSize: '0.9rem', fontWeight: 600, transition: 'background 0.2s'
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(66,153,225,0.25)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(66,153,225,0.15)'}
-          >
-            Reintentar
-          </button>
-        </div>
+        <button
+          onClick={() => { setStatus('idle'); setErrorMsg(''); }}
+          style={{
+            marginTop: '0.5rem', padding: '0.6rem 1.5rem',
+            background: 'rgba(99,179,237,0.15)', border: '1px solid rgba(99,179,237,0.3)',
+            borderRadius: 10, color: '#90cdf4', cursor: 'pointer', fontSize: '0.85rem'
+          }}
+        >
+          ↺ Intentar de nuevo
+        </button>
       )}
 
-      {/* Footer */}
-      <div style={{
-        marginTop: '2rem', paddingTop: '1.25rem',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        width: '100%', textAlign: 'center'
+      {/* Info costos */}
+      <p style={{
+        marginTop: '1.5rem', color: '#4a5568', fontSize: '0.72rem', textAlign: 'center'
       }}>
-        <p style={{ fontSize: '0.72rem', color: '#4a5568', margin: 0 }}>
-          🔒 Sesión segura · Límite 10 min · ~$0.04/min · Desconexión automática
-        </p>
-      </div>
+        Sesión máxima: 10 min · ~$0.06/min · Solo administradores
+      </p>
     </div>
   );
 }
