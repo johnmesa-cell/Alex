@@ -108,8 +108,10 @@ server.on('upgrade', (req, socket, head) => {
         return;
       }
 
-      // Solo usuarios con rol admin pueden usar voz en tiempo real
-      if (!decoded || decoded.role !== 'admin') {
+      // CORRECCIÓN: el JWT incluye idRol y roleId como número (2 = admin),
+      // no un campo "role" con string. Se alinea con auth.controller.js y admin.middleware.js.
+      const rolId = Number(decoded.idRol ?? decoded.roleId ?? decoded.id_rol ?? 0);
+      if (!decoded || rolId !== 2) {
         socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
         socket.destroy();
         return;
@@ -119,7 +121,6 @@ server.on('upgrade', (req, socket, head) => {
         wss.emit('connection', ws, req);
       });
     } else {
-      // Cualquier otra ruta WebSocket no está soportada
       socket.destroy();
     }
   });
@@ -129,21 +130,18 @@ server.on('upgrade', (req, socket, head) => {
 
     const agentWsUrl = (process.env.AGENT_URL_WS || 'ws://alex_agent:3500') + '/admin/live';
 
-    // Conectar al agente enviando header de autenticación interna
     const agentWs = new WebSocket(agentWsUrl, {
       headers: {
         'x-from-backend': 'true'
       }
     });
 
-    // Proxy bidireccional: browser → agente
     browserWs.on('message', (data) => {
       if (agentWs.readyState === WebSocket.OPEN) {
         agentWs.send(data);
       }
     });
 
-    // Proxy bidireccional: agente → browser
     agentWs.on('message', (data) => {
       if (browserWs.readyState === WebSocket.OPEN) {
         browserWs.send(data);

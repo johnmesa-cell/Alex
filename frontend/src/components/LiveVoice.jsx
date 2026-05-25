@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 
@@ -6,7 +5,7 @@ const SESSION_DURATION = 10 * 60;
 
 export default function LiveVoice() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = Number(user?.idRol ?? user?.roleId) === 2;
 
   const [status, setStatus] = useState('idle');
   const [timeLeft, setTimeLeft] = useState(SESSION_DURATION);
@@ -163,27 +162,81 @@ export default function LiveVoice() {
       </p>
 
       {status === 'idle' && (
-        <button onClick={startSession}>🎤 Iniciar sesión de voz</button>
+        <button
+          onClick={startSession}
+          style={{
+            background: '#2b6cb0', color: '#fff', border: 'none',
+            borderRadius: 8, padding: '0.75rem 1.75rem',
+            cursor: 'pointer', fontSize: '1rem', fontWeight: 600
+          }}
+        >
+          🎤 Iniciar sesión de voz
+        </button>
       )}
 
-      {status === 'connecting' && <p>⏳ Conectando con el servidor…</p>}
+      {status === 'connecting' && (
+        <p style={{ color: '#ecc94b', fontSize: '0.95rem' }}>
+          ⏳ Conectando con el servidor…
+        </p>
+      )}
 
       {status === 'listening' && (
         <div>
-          <p>🟢 Escuchando — Habla con ALEX</p>
-          <p>⏱ {formatTime(timeLeft)}</p>
-          <button onClick={stopSession}>⏹ Terminar sesión</button>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem'
+          }}>
+            <span style={{
+              width: 12, height: 12, borderRadius: '50%',
+              background: '#68d391', display: 'inline-block',
+              boxShadow: '0 0 8px #68d391'
+            }} />
+            <span style={{ color: '#68d391', fontWeight: 600 }}>
+              Escuchando — Habla con ALEX
+            </span>
+          </div>
+
+          <p style={{
+            fontFamily: 'monospace', fontSize: '2rem',
+            color: timeLeft < 60 ? '#fc8181' : '#e2e8f0',
+            marginBottom: '1rem', letterSpacing: 2
+          }}>
+            ⏱ {formatTime(timeLeft)}
+          </p>
+
+          <button
+            onClick={stopSession}
+            style={{
+              background: '#c53030', color: '#fff', border: 'none',
+              borderRadius: 8, padding: '0.65rem 1.5rem',
+              cursor: 'pointer', fontSize: '0.95rem'
+            }}
+          >
+            ⏹ Terminar sesión
+          </button>
         </div>
       )}
 
       {status === 'error' && (
         <div>
-          <p>❌ {errorMsg}</p>
-          <button onClick={() => { setStatus('idle'); setErrorMsg(''); }}>
+          <p style={{ color: '#fc8181', marginBottom: '0.75rem', fontSize: '0.92rem' }}>
+            ❌ {errorMsg}
+          </p>
+          <button
+            onClick={() => { setStatus('idle'); setErrorMsg(''); }}
+            style={{
+              background: '#2b6cb0', color: '#fff', border: 'none',
+              borderRadius: 8, padding: '0.65rem 1.5rem',
+              cursor: 'pointer', fontSize: '0.9rem'
+            }}
+          >
             Reintentar
           </button>
         </div>
       )}
+
+      <p style={{ fontSize: '0.75rem', color: '#4a5568', marginTop: '2rem' }}>
+        Sesión limitada a 10 minutos (~$0.04/min). Se desconecta automáticamente al vencer el tiempo.
+      </p>
     </div>
   );
 }
